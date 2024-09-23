@@ -3,6 +3,8 @@ import time
 import subprocess
 import os
 import pytesseract
+import mss
+import mss.tools
 from loguru import logger
 from PIL import Image
 from Quartz.CoreGraphics import (
@@ -23,6 +25,17 @@ def log(msg, msg_type="success"):
 
 
 pag.PAUSE = 1
+
+
+def capture_screenshot(region=None, output_path="screenshot.png"):
+    with mss.mss() as sct:
+        if region: # capture a specific region or the whole screen
+            screenshot = sct.grab(region)
+        else: # full screen
+            screenshot = sct.grab(sct.monitors[0])
+
+        # save to file
+        mss.tools.to_png(screenshot.rgb, screenshot.size, output=output_path)
 
 
 # function to perform OCR on a screenshot and check for specific text
@@ -49,6 +62,7 @@ def find_text_location(image_path, search_text):
     img = Image.open(image_path)
     # use Tesseract to get detailed information about the text in the image
     data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+    log(data, "info")
 
     for i in range(len(data["text"])):
         # if the detected text matches the search text
@@ -72,7 +86,7 @@ def find_text_location(image_path, search_text):
 # launch iphone mirroring app
 def launch_iphone_mirroring():
     try:
-        script = 'tell application "iPhone Mirroring" to activate'
+        script = 'tell application "iphone Mirroring" to activate'
         subprocess.run(["osascript", "-e", script], check=True)
 
         log("iphone mirroring app launched.", "debug")
@@ -117,7 +131,7 @@ def get_iphone_mirroring_region():
         if len(win_bounds) == 4:
             left, top, width, height = map(lambda x: abs(int(x)), win_bounds)
             log(
-                f"iPhone Mirroring window region: {(left, top + 30, width, height)}",
+                f"iphone Mirroring window region: {(left, top + 30, width, height)}",
                 "info",
             )
 
@@ -150,7 +164,7 @@ def get_iphone_mirroring_region():
 #     #     # log("scroll performed (simulated two-finger swipe up).", "info")
 #     #     time.sleep(1.5)
 #     # else:
-#     #     log("unable to get iPhone Mirroring window region for scrolling.", "error")
+#     #     log("unable to get iphone Mirroring window region for scrolling.", "error")
 
 #         time.sleep(1.5)
 #         log("performing scroll using Quartz.", "debug")
@@ -298,7 +312,8 @@ def main():
     # Check if 'Please Tap the Screen' exists in the screenshot
     found = False
     while not found:
-        pag.screenshot(region=region).save("img/screenshots/first_tap_on_open.png")
+        left, top, width, height = region
+        capture_screenshot(region={"top": top, "left": left, "width": width, "height": height}, output_path="img/screenshots/first_tap_on_open.png")
         found = check_text_in_image(
             "img/screenshots/first_tap_on_open.png", "Please Tap the Screen"
         )
@@ -312,7 +327,8 @@ def main():
     time.sleep(8)
 
     # in case friend popup comes up
-    pag.screenshot(region=region).save("img/screenshots/potential_friend_popup.png")
+    left, top, width, height = region
+    capture_screenshot(region={"top": top, "left": left, "width": width, "height": height}, output_path="img/screenshots/potential_friend_popup.png")
     if check_text_in_image(
         "img/screenshots/potential_friend_popup.png", "Friend Points"
     ) or check_text_in_image(
@@ -322,13 +338,46 @@ def main():
         if bbox:
             x, y, width, height = bbox
             log(
-                f"Bounding box for 'Please Tap the Screen': x={x}, y={y}, width={width}, height={height}"
+                f"Bounding box for 'Close': x={x}, y={y}, width={width}, height={height}"
             )
             pag.moveTo(region[0] + x, region[1] + y)
         else:
             pag.moveTo((region[0] + region[2]) * 0.3, (region[1] + region[3]) * 0.85)
         pag.click()
 
+    left, top, width, height = region
+    capture_screenshot(region={"top": top, "left": left, "width": width, "height": height}, output_path="img/screenshots/fgo_in_game_homescreen.png")
+    bbox = find_text_location("img/screenshots/fgo_in_game_homescreen.png", "Chaldea Gate")
+    if bbox:
+        x, y, width, height = bbox
+        log(
+            f"Bounding box for 'Chaldea Gate': x={x}, y={y}, width={width}, height={height}"
+        )
+        pag.moveTo(region[0] + x, region[1] + y)
+    else:
+        pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.775)
+    pag.click()
+
+    left, top, width, height = region
+    capture_screenshot(region={"top": top, "left": left, "width": width, "height": height}, output_path="img/screenshots/chaldea_gate_menu.png")
+    bbox = find_text_location("img/screenshots/chaldea_gate_menu.png", "Daily Quests")
+    if bbox:
+        x, y, width, height = bbox
+        log(
+            f"Bounding box for 'Daily Quests': x={x}, y={y}, width={width}, height={height}"
+        )
+        pag.moveTo(region[0] + x, region[1] + y)
+    else:
+        pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
+    pag.click()
+
+    left, top, width, height = region
+    capture_screenshot(region={"top": top, "left": left, "width": width, "height": height}, output_path="img/screenshots/daily_quests_menu.png")
+    bbox = find_text_location("img/screenshots/daily_quests_menu.png", "Enter the Treasure Vault - Extreme")
+    if bbox:
+        log("pls open thingy")
+    else:
+        log("idk yet - probably scroll down", "warning")
 
 if __name__ == "__main__":
     main()
