@@ -10,8 +10,9 @@ from Quartz.CoreGraphics import (
     kCGScrollEventUnitLine,
     kCGEventScrollWheel,
     kCGEventSourceStateCombinedSessionState,  # Use this instead of kCGEventSourceStateHID
-    CGEventPost
+    CGEventPost,
 )
+
 
 # msg_type: one of ["success", "error", "trace", "info", "warning", "critical", "debug"]
 def log(msg, msg_type="success"):
@@ -20,7 +21,9 @@ def log(msg, msg_type="success"):
     except Exception as e:
         logger.error(e)
 
+
 pag.PAUSE = 1
+
 
 # function to perform OCR on a screenshot and check for specific text
 def check_text_in_image(image_path, search_text):
@@ -39,6 +42,7 @@ def check_text_in_image(image_path, search_text):
         log(f"Did not find text: {search_text}", "warning")
         return False
 
+
 # function to find the bounding box of specific text in an image
 def find_text_location(image_path, search_text):
     # load the image
@@ -46,42 +50,52 @@ def find_text_location(image_path, search_text):
     # use Tesseract to get detailed information about the text in the image
     data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
 
-    for i in range(len(data['text'])):
+    for i in range(len(data["text"])):
         # if the detected text matches the search text
-        if search_text.lower() in data['text'][i].lower():
-            x, y, w, h = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
-            log(f"Found text: {search_text} (at ({x}, {y}) with width: {w}, height: {h})", "success")
+        if search_text.lower() in data["text"][i].lower():
+            x, y, w, h = (
+                data["left"][i],
+                data["top"][i],
+                data["width"][i],
+                data["height"][i],
+            )
+            log(
+                f"Found text: {search_text} (at ({x}, {y}) with width: {w}, height: {h})",
+                "success",
+            )
             return (x, y, w, h)
 
     log(f"Did not find text: {search_text}", "warning")
     return None
-    
+
+
 # launch iphone mirroring app
 def launch_iphone_mirroring():
     try:
         script = 'tell application "iPhone Mirroring" to activate'
-        subprocess.run(['osascript', '-e', script], check=True)
+        subprocess.run(["osascript", "-e", script], check=True)
 
         log("iphone mirroring app launched.", "debug")
         time.sleep(1.5)
-        
+
     except subprocess.CalledProcessError as e:
         log(f"failed to launch iphone mirroring app: {e}", "error")
+
 
 # focus on the iphone mirroring window using applescript
 def focus_iphone_mirroring_window():
     try:
         # Combine both AppleScript commands into a single script
-        script = '''
+        script = """
         tell application "System Events"
             tell process "iPhone Mirroring"
                 set frontmost to true
                 set visible to true
             end tell
         end tell
-        '''
+        """
         # Run the combined script
-        subprocess.run(['osascript', '-e', script], check=True)
+        subprocess.run(["osascript", "-e", script], check=True)
 
         log("iphone mirroring window focused and visible.", "debug")
         time.sleep(1.5)
@@ -89,27 +103,34 @@ def focus_iphone_mirroring_window():
     except subprocess.CalledProcessError as e:
         log(f"error focusing iphone mirroring window: {e}", "error")
 
+
 # function to get the region of the iphone mirroring window
 def get_iphone_mirroring_region():
     try:
         script = 'tell application "System Events" to tell process "iPhone Mirroring" to get {position, size} of front window'
-        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=True)
+        result = subprocess.run(
+            ["osascript", "-e", script], capture_output=True, text=True, check=True
+        )
 
         win_bounds = result.stdout.strip().split(", ")
 
         if len(win_bounds) == 4:
             left, top, width, height = map(lambda x: abs(int(x)), win_bounds)
-            log(f"iPhone Mirroring window region: {(left, top + 30, width, height)}", "info")
+            log(
+                f"iPhone Mirroring window region: {(left, top + 30, width, height)}",
+                "info",
+            )
 
             return (left, top, width, height)
 
         else:
             log("failed to retrieve iphone mirroring window bounds", "error")
             return None
-        
+
     except subprocess.CalledProcessError as e:
         log(f"error getting iphone mirroring window bounds: {e}", "error")
         return None
+
 
 # # function to scroll (simulate 2-finger swipe up) in the center of the iphone mirroring window
 # def perform_two_finger_swipe():
@@ -163,7 +184,7 @@ def get_iphone_mirroring_region():
 #         if region:
 
 #             pag.screenshot(region=region).save('img/ss.png')
-            
+
 #             # locate and click the search button only within the iphone mirroring app region
 #             search_button_location = pag.locateCenterOnScreen(search_button_path, region=region, confidence=0.8)
 #             log(f"search_button_location: {search_button_location}", "debug")
@@ -217,11 +238,11 @@ def get_iphone_mirroring_region():
 #     #         r = pag.locateCenterOnScreen('img/search_button.png', confidence=0.7, region=region, grayscale=True)
 #     #         if r is not None:
 #     #             log(f"Image found at location: {r}", "info")
-                
+
 #     #     except pag.ImageNotFoundException:
 #     #         log("Image not found. Retrying...", "info")
 #     #         time.sleep(1)  # Optional: Add a short delay between retries
-            
+
 #     # log(f"final r: {r}", "info")
 #     # pag.moveTo(r.x, r.y)
 
@@ -235,25 +256,26 @@ def get_iphone_mirroring_region():
 #     pag.press('enter')
 #     log("fate/go entered into search bar.", "info")
 #     time.sleep(5)  # wait for search results
-    # pag.screenshot(region=(230, 310, 175, 37)).save('img/first_tap_on_open.png')
-    # loc = None
-    # x = y = None
-    
-    # while x is None and y is None:
-    #     try:
-    #         x, y = pyscreeze.locateCenterOnScreen("img/first_tap_on_open.png", confidence=0.5, region=region)
-    #         # loc = pag.locateCenterOnScreen('img/first_tap_on_open_preprocessed.png', confidence=0.8, region=region, grayscale=True)
-    #         if x is not None and y is not None:
-    #             log(f"Image found at location: {x}, {y}", "info")
-                
-    #     except:
-    #         log("Image not found. Retrying...", "info")
-    #         time.sleep(1)
-            
-    # log(f"final loc: {x}, {y}", "info")
-    # pag.moveTo(x, y, duration = 0.5)
-    # # pyautogui.click()
-    # # pag.moveTo(loc.x, loc.y)
+# pag.screenshot(region=(230, 310, 175, 37)).save('img/first_tap_on_open.png')
+# loc = None
+# x = y = None
+
+# while x is None and y is None:
+#     try:
+#         x, y = pyscreeze.locateCenterOnScreen("img/first_tap_on_open.png", confidence=0.5, region=region)
+#         # loc = pag.locateCenterOnScreen('img/first_tap_on_open_preprocessed.png', confidence=0.8, region=region, grayscale=True)
+#         if x is not None and y is not None:
+#             log(f"Image found at location: {x}, {y}", "info")
+
+#     except:
+#         log("Image not found. Retrying...", "info")
+#         time.sleep(1)
+
+# log(f"final loc: {x}, {y}", "info")
+# pag.moveTo(x, y, duration = 0.5)
+# # pyautogui.click()
+# # pag.moveTo(loc.x, loc.y)
+
 
 def main():
     # step 1: launch and focus the iphone mirroring app
@@ -267,8 +289,8 @@ def main():
     pag.click()
 
     # open fgo
-    pag.write('fate/go', interval=0.05)
-    pag.press('enter')
+    pag.write("fate/go", interval=0.05)
+    pag.press("enter")
     log("fate/go entered into search bar.", "debug")
 
     region = get_iphone_mirroring_region()
@@ -277,7 +299,9 @@ def main():
     found = False
     while not found:
         pag.screenshot(region=region).save("img/screenshots/first_tap_on_open.png")
-        found = check_text_in_image("img/screenshots/first_tap_on_open.png", "Please Tap the Screen")
+        found = check_text_in_image(
+            "img/screenshots/first_tap_on_open.png", "Please Tap the Screen"
+        )
         time.sleep(1)
 
     pag.moveTo((region[0] + region[2]) // 2, (region[1] + region[3]) // 2)
@@ -289,15 +313,22 @@ def main():
 
     # in case friend popup comes up
     pag.screenshot(region=region).save("img/screenshots/potential_friend_popup.png")
-    if check_text_in_image("img/screenshots/potential_friend_popup.png", "Friend Points") or check_text_in_image("img/screenshots/potential_friend_popup.png", "Most used Servant"):
+    if check_text_in_image(
+        "img/screenshots/potential_friend_popup.png", "Friend Points"
+    ) or check_text_in_image(
+        "img/screenshots/potential_friend_popup.png", "Most used Servant"
+    ):
         bbox = find_text_location("img/screenshots/potential_friend_popup.png", "Close")
         if bbox:
             x, y, width, height = bbox
-            log(f"Bounding box for 'Please Tap the Screen': x={x}, y={y}, width={width}, height={height}")
+            log(
+                f"Bounding box for 'Please Tap the Screen': x={x}, y={y}, width={width}, height={height}"
+            )
             pag.moveTo(region[0] + x, region[1] + y)
         else:
             pag.moveTo((region[0] + region[2]) * 0.3, (region[1] + region[3]) * 0.85)
         pag.click()
-    
+
+
 if __name__ == "__main__":
     main()
