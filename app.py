@@ -20,7 +20,7 @@ def log(msg, msg_type="success"):
     except Exception as e:
         logger.error(e)
 
-pag.PAUSE = 1.5
+pag.PAUSE = 1
 
 # function to perform OCR on a screenshot and check for specific text
 def check_text_in_image(image_path, search_text):
@@ -45,16 +45,15 @@ def find_text_location(image_path, search_text):
     img = Image.open(image_path)
     # use Tesseract to get detailed information about the text in the image
     data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
-    log(data, "debug")
 
     for i in range(len(data['text'])):
         # if the detected text matches the search text
         if search_text.lower() in data['text'][i].lower():
             x, y, w, h = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
-            log(f"Found '{search_text}' at ({x}, {y}) with width: {w}, height: {h}", "success")
+            log(f"Found text: {search_text} (at ({x}, {y}) with width: {w}, height: {h})", "success")
             return (x, y, w, h)
 
-    log(f"Text '{search_text}' not found.", "warning")
+    log(f"Did not find text: {search_text}", "warning")
     return None
     
 # launch iphone mirroring app
@@ -268,7 +267,7 @@ def main():
     pag.click()
 
     # open fgo
-    pag.write('fate/go', interval=0.1)
+    pag.write('fate/go', interval=0.05)
     pag.press('enter')
     log("fate/go entered into search bar.", "debug")
 
@@ -279,7 +278,7 @@ def main():
     while not found:
         pag.screenshot(region=region).save("img/screenshots/first_tap_on_open.png")
         found = check_text_in_image("img/screenshots/first_tap_on_open.png", "Please Tap the Screen")
-        time.sleep(2)
+        time.sleep(1)
 
     pag.moveTo((region[0] + region[2]) // 2, (region[1] + region[3]) // 2)
     pag.click()
