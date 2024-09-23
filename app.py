@@ -29,9 +29,9 @@ pag.PAUSE = 1
 
 def capture_screenshot(region=None, output_path="screenshot.png"):
     with mss.mss() as sct:
-        if region: # capture a specific region or the whole screen
+        if region:  # capture a specific region or the whole screen
             screenshot = sct.grab(region)
-        else: # full screen
+        else:  # full screen
             screenshot = sct.grab(sct.monitors[0])
 
         # save to file
@@ -313,7 +313,10 @@ def main():
     found = False
     while not found:
         left, top, width, height = region
-        capture_screenshot(region={"top": top, "left": left, "width": width, "height": height}, output_path="img/screenshots/first_tap_on_open.png")
+        capture_screenshot(
+            region={"top": top, "left": left, "width": width, "height": height},
+            output_path="img/screenshots/first_tap_on_open.png",
+        )
         found = check_text_in_image(
             "img/screenshots/first_tap_on_open.png", "Please Tap the Screen"
         )
@@ -328,7 +331,10 @@ def main():
 
     # in case friend popup comes up
     left, top, width, height = region
-    capture_screenshot(region={"top": top, "left": left, "width": width, "height": height}, output_path="img/screenshots/potential_friend_popup.png")
+    capture_screenshot(
+        region={"top": top, "left": left, "width": width, "height": height},
+        output_path="img/screenshots/potential_friend_popup.png",
+    )
     if check_text_in_image(
         "img/screenshots/potential_friend_popup.png", "Friend Points"
     ) or check_text_in_image(
@@ -346,8 +352,13 @@ def main():
         pag.click()
 
     left, top, width, height = region
-    capture_screenshot(region={"top": top, "left": left, "width": width, "height": height}, output_path="img/screenshots/fgo_in_game_homescreen.png")
-    bbox = find_text_location("img/screenshots/fgo_in_game_homescreen.png", "Chaldea Gate")
+    capture_screenshot(
+        region={"top": top, "left": left, "width": width, "height": height},
+        output_path="img/screenshots/fgo_in_game_homescreen.png",
+    )
+    bbox = find_text_location(
+        "img/screenshots/fgo_in_game_homescreen.png", "Chaldea Gate"
+    )
     if bbox:
         x, y, width, height = bbox
         log(
@@ -359,7 +370,10 @@ def main():
     pag.click()
 
     left, top, width, height = region
-    capture_screenshot(region={"top": top, "left": left, "width": width, "height": height}, output_path="img/screenshots/chaldea_gate_menu.png")
+    capture_screenshot(
+        region={"top": top, "left": left, "width": width, "height": height},
+        output_path="img/screenshots/chaldea_gate_menu.png",
+    )
     bbox = find_text_location("img/screenshots/chaldea_gate_menu.png", "Daily Quests")
     if bbox:
         x, y, width, height = bbox
@@ -372,12 +386,18 @@ def main():
     pag.click()
 
     left, top, width, height = region
-    capture_screenshot(region={"top": top, "left": left, "width": width, "height": height}, output_path="img/screenshots/daily_quests_menu.png")
-    bbox = find_text_location("img/screenshots/daily_quests_menu.png", "Enter the Treasure Vault - Extreme")
+    capture_screenshot(
+        region={"top": top, "left": left, "width": width, "height": height},
+        output_path="img/screenshots/daily_quests_menu.png",
+    )
+    bbox = find_text_location(
+        "img/screenshots/daily_quests_menu.png", "Enter the Treasure Vault - Extreme"
+    )
     if bbox:
         log("pls open thingy")
     else:
         log("idk yet - probably scroll down", "warning")
+
 
 if __name__ == "__main__":
     main()
