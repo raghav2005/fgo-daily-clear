@@ -9,6 +9,8 @@ pillow = "*"
 opencv-python = "*"
 pygetwindow = "*"
 loguru = "*"
+pytesseract = "*"
+pyscreeze = "*"
 
 [dev-packages]
 
