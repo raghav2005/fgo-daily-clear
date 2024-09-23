@@ -169,44 +169,71 @@ def get_iphone_mirroring_region():
 #         return False
 
 # main function to run the automation
+# def main():
+#     # step 1: launch and focus the iphone mirroring app
+#     launch_iphone_mirroring()
+#     focus_iphone_mirroring_window()
+
+#     region = get_iphone_mirroring_region()
+#     # pag.screenshot(region=region).save('img/ss.png')
+#     # pag.screenshot(region=(20, 576, 256, 42)).save('img/search_button.png')
+#     # r = None
+#     # while r is None:
+#     #     try:
+#     #         r = pag.locateCenterOnScreen('img/search_button.png', confidence=0.7, region=region, grayscale=True)
+#     #         if r is not None:
+#     #             log(f"Image found at location: {r}", "info")
+                
+#     #     except pag.ImageNotFoundException:
+#     #         log("Image not found. Retrying...", "info")
+#     #         time.sleep(1)  # Optional: Add a short delay between retries
+            
+#     # log(f"final r: {r}", "info")
+#     # pag.moveTo(r.x, r.y)
+
+#     # 607-624, (312x694) - Jash
+#     # 585-608, (300x668) - Raghav
+
+#     pag.moveTo((region[0] + region[2]) // 2, (region[1] + region[3]) * 0.85)
+#     pag.click()
+#     time.sleep(1.5)
+#     pag.write('fate/go', interval=0.1)
+#     pag.press('enter')
+#     log("fate/go entered into search bar.", "info")
+#     time.sleep(5)  # wait for search results
+
 def main():
     # step 1: launch and focus the iphone mirroring app
     launch_iphone_mirroring()
     focus_iphone_mirroring_window()
 
     region = get_iphone_mirroring_region()
-    # pag.screenshot(region=region).save('img/ss.png')
-    # pag.screenshot(region=(20, 576, 256, 42)).save('img/search_button.png')
-    # r = None
-    # while r is None:
-    #     try:
-    #         r = pag.locateCenterOnScreen('img/search_button.png', confidence=0.7, region=region, grayscale=True)
-    #         if r is not None:
-    #             log(f"Image found at location: {r}", "info")
-                
-    #     except pag.ImageNotFoundException:
-    #         log("Image not found. Retrying...", "info")
-    #         time.sleep(1)  # Optional: Add a short delay between retries
-            
-    # log(f"final r: {r}", "info")
-    # pag.moveTo(r.x, r.y)
 
-    # 607-624, (312x694) - Jash
-    # 585-608, (300x668) - Raghav
-
-    # x, y, w, h
+    # go to search button and click
     pag.moveTo((region[0] + region[2]) // 2, (region[1] + region[3]) * 0.85)
+    pag.click()
 
-    # log("attempting opening search menu", "debug")
-    # perform_two_finger_swipe()
-    # log("opened search menu", "debug")
+    # open fgo
+    pag.write('fate/go', interval=0.1)
+    pag.press('enter')
+    log("fate/go entered into search bar.", "info")
+
+    region = get_iphone_mirroring_region()
+    # pag.screenshot(region=(230, 310, 175, 37)).save('img/first_tap_on_open.png')
+    loc = None
     
-    # # step 2: open the fate/go game by clicking the icon
-    # log("attempting to search for fate/go.", "info")
-    # if search_and_open_fate_go():
-    #     log("fate/go successfully opened via search.", "info")
-    # else:
-    #     log("failed to open fate/go.", "error")
-
+    while loc is None:
+        try:
+            loc = pag.locateCenterOnScreen('img/first_tap_on_open_preprocessed.png', confidence=0.8, region=region, grayscale=True)
+            if loc is not None:
+                log(f"Image found at location: {loc}", "info")
+                
+        except pag.ImageNotFoundException:
+            log("Image not found. Retrying...", "info")
+            time.sleep(1)
+            
+    log(f"final loc: {loc}", "info")
+    pag.moveTo(loc.x, loc.y)
+    
 if __name__ == "__main__":
     main()
