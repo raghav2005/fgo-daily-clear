@@ -323,8 +323,9 @@ def main():
     pag.press("enter")
     log("fate/go entered into search bar.", "debug")
 
-    # click for first loading screen
     region = get_iphone_mirroring_region()
+
+    # click for first loading screen
     found = False
     while not found:
         left, top, width, height = region
@@ -345,7 +346,6 @@ def main():
     time.sleep(GENERAL_LONG_SLEEP)
 
     # in case friend popup comes up
-    region = get_iphone_mirroring_region()
     left, top, width, height = region
     capture_screenshot(
         region={"top": top, "left": left, "width": width, "height": height},
@@ -369,7 +369,6 @@ def main():
         time.sleep(GENERAL_LONG_SLEEP)
     
     # in case news shows up
-    region = get_iphone_mirroring_region()
     left, top, width, height = region
     capture_screenshot(
         region={"top": top, "left": left, "width": width, "height": height},
@@ -391,13 +390,11 @@ def main():
         time.sleep(GENERAL_LONG_SLEEP)
 
     # drag scroll bar to top of screen
-    region = get_iphone_mirroring_region()
     pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.35)
     pag.click()
     pag.dragTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.3, button="left")
     
     # open Chaldea Gate menu
-    region = get_iphone_mirroring_region()
     left, top, width, height = region
     capture_screenshot(
         region={"top": top, "left": left, "width": width, "height": height},
@@ -417,7 +414,6 @@ def main():
     pag.click()
     
     # open Daily Quests menu
-    region = get_iphone_mirroring_region()
     left, top, width, height = region
     capture_screenshot(
         region={"top": top, "left": left, "width": width, "height": height},
@@ -433,10 +429,15 @@ def main():
     else:
         pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
     pag.click()
+
+    # drag scroll bar to top of screen
+    pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.35)
+    pag.click()
+    pag.dragTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.3, button="left")
     
     # scroll to find Extreme QP quest
-    region = get_iphone_mirroring_region()
     left, top, width, height = region
+    curr_y = (region[1] + region[3]) * 0.3
     capture_screenshot(
         region={"top": top, "left": left, "width": width, "height": height},
         output_path="img/screenshots/daily_quests_menu.png",
@@ -451,8 +452,12 @@ def main():
         )
         pag.moveTo(region[0] + x, region[1] + y)
     else:
-        while not bbox:            
-            pag.scroll(-500) # scroll down
+        while not bbox:
+            if curr_y >= ((region[1] + region[3]) * 0.835):
+                break
+
+            curr_y += (region[1] + region[3]) * 0.05
+            pag.dragTo((region[0] + region[2]) * 0.925, curr_y, button="left")
             
             capture_screenshot(
                 region={"top": top, "left": left, "width": width, "height": height},
@@ -462,11 +467,19 @@ def main():
                 "img/screenshots/daily_quests_menu.png", "Enter the Treasure Vault - Extreme"
             )
 
-        x, y, width, height = bbox
-        log(
-            f"Bounding box for 'Enter the Treasure Valut - Extreme': x={x}, y={y}, width={width}, height={height}"
-        )
-        pag.moveTo(region[0] + x, region[1] + y)
+        if bbox:
+            x, y, width, height = bbox
+            log(
+                f"Bounding box for 'Enter the Treasure Vault - Extreme': x={x}, y={y}, width={width}, height={height}"
+            )
+            pag.moveTo(region[0] + x, region[1] + y)
+        else:
+            pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.835)
+            pag.click()
+
+            # click on QP Extreme quest
+            pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
+            pag.click()
 
 
 if __name__ == "__main__":
