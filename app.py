@@ -300,22 +300,7 @@ def main():
     region = get_iphone_mirroring_region()
 
     # click on search button
-    left, top, width, height = region
-    capture_screenshot(
-        region={"top": top, "left": left, "width": width, "height": height},
-        output_path="img/screenshots/iphone_homescreen.png",
-    )
-    bbox = find_text_location(
-        "img/screenshots/iphone_homescreen.png", "Search"
-    )
-    if bbox:
-        x, y, width, height = bbox
-        log(
-            f"Bounding box for 'Search': x={x}, y={y}, width={width}, height={height}"
-        )
-        pag.moveTo(region[0] + x, region[1] + y)
-    else:
-        pag.moveTo((region[0] + region[2]) // 2, (region[1] + region[3]) * 0.85)
+    pag.moveTo((region[0] + region[2]) // 2, (region[1] + region[3]) * 0.85)
     pag.click()
 
     # open fgo
