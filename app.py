@@ -392,6 +392,8 @@ def main():
             curr_y += loc.height // 4
             pag.dragTo((region[0] + region[2]) * 0.925, curr_y, button="left", duration=0.5)
 
+    # wait for game to load and then pop correct skills (maybe image recognition for when new wave?)
+
 
 if __name__ == "__main__":
     main()
