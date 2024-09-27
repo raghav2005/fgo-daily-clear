@@ -147,6 +147,32 @@ def get_iphone_mirroring_region():
         return None
 
 
+def action_text(general_fields, img_path, search_words, text_loc_word, harcoded_screen_percentages):
+    region = general_fields["region"]
+    left, top, width, height = general_fields["left"], general_fields["top"], general_fields["width"], general_fields["height"]
+
+    # in case friend popup comes up
+    capture_screenshot(
+        region={"top": top, "left": left, "width": width, "height": height},
+        output_path=img_path,
+    )
+
+    search_word_results = [check_text_in_image(img_path, search_word) for search_word in search_words]
+
+    if True in search_word_results:
+        bbox = find_text_location(img_path, text_loc_word)
+        if bbox:
+            x, y, width, height = bbox
+            log(
+                f"Bounding box for '{text_loc_word}': x={x}, y={y}, width={width}, height={height}"
+            )
+            pag.moveTo(region[0] + x, region[1] + y)
+        else:
+            pag.moveTo((region[0] + region[2]) * harcoded_screen_percentages[0], (region[1] + region[3]) * harcoded_screen_percentages[1])
+        pag.click()
+        time.sleep(GENERAL_LONG_SLEEP)
+
+
 def main():
     # launch and focus the iphone mirroring app
     launch_iphone_mirroring()
@@ -166,6 +192,7 @@ def main():
 
     region = get_iphone_mirroring_region()
     left, top, width, height = region
+    general_fields = {"region": region, "left": left, "top": top, "width": width, "height": height}
 
     # click for first loading screen
     found = False
@@ -187,43 +214,16 @@ def main():
     time.sleep(GENERAL_LONG_SLEEP)
 
     # in case friend popup comes up
-    capture_screenshot(
-        region={"top": top, "left": left, "width": width, "height": height},
-        output_path="img/screenshots/potential_friend_popup.png",
-    )
-    if check_text_in_image(
-        "img/screenshots/potential_friend_popup.png", "Friend Points"
-    ) or check_text_in_image(
-        "img/screenshots/potential_friend_popup.png", "Most used Servant"
-    ):
-        bbox = find_text_location("img/screenshots/potential_friend_popup.png", "Close")
-        if bbox:
-            x, y, width, height = bbox
-            log(
-                f"Bounding box for 'Close': x={x}, y={y}, width={width}, height={height}"
-            )
-            pag.moveTo(region[0] + x, region[1] + y)
-        else:
-            pag.moveTo((region[0] + region[2]) * 0.3, (region[1] + region[3]) * 0.85)
-        pag.click()
-        time.sleep(GENERAL_LONG_SLEEP)
+    action_text(general_fields, "img/screenshots/potential_friend_popup.png", ["Friend Points", "Most used Servant"], "Close", [0.3, 0.85])
     
     # in case news shows up
     capture_screenshot(
         region={"top": top, "left": left, "width": width, "height": height},
         output_path="img/screenshots/potential_news.png",
     )
-    if check_text_in_image(
-        "img/screenshots/potential_news.png", "News"
-    ) or check_text_in_image(
-        "img/screenshots/potential_news.png", "Maintenance"
-    ) or check_text_in_image(
-        "img/screenshots/potential_news.png", "Issues"
-    ) or check_text_in_image(
-        "img/screenshots/potential_news.png", "Facebook"
-    ) or check_text_in_image(
-        "img/screenshots/potential_news.png", "X (Twitter)"
-    ):
+    search_words = ["News", "Maintenance", "Issues", "Facebook", "X (Twitter)"]
+    search_words_results = [check_text_in_image("img/screenshots/potential_news.png", search_word) for search_word in search_words]
+    if True in search_words_results:
         pag.moveTo((region[0] + region[2]) * 0.885, (region[1] + region[3]) * 0.24)
         pag.click()
         time.sleep(GENERAL_LONG_SLEEP)
