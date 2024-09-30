@@ -13,6 +13,13 @@ from Quartz.CoreGraphics import (
     kCGEventScrollWheel,
     kCGEventSourceStateCombinedSessionState,  # Use this instead of kCGEventSourceStateHID
     CGEventPost,
+    CGEventCreateMouseEvent,
+    kCGEventLeftMouseDown,
+    kCGEventLeftMouseUp,
+    kCGEventLeftMouseDragged,
+    kCGEventMouseMoved,
+    kCGMouseButtonLeft,
+    kCGHIDEventTap,
 )
 
 
@@ -82,6 +89,38 @@ def find_text_location(image_path, search_text):
 
     log(f"Did not find text: {search_text}", "warning")
     return None
+
+
+# def mouse_event(event_type, x, y):
+#     event = CGEventCreateMouseEvent(None, event_type, (x, y), kCGMouseButtonLeft)
+#     CGEventPost(kCGHIDEventTap, event)
+
+
+# def force_click(x, y, hold_duration=0.5):
+#     """
+#     Simulates a 'force click' by holding down the left mouse button for a specific duration.
+
+#     Args:
+#         x (int): X-coordinate for the click.
+#         y (int): Y-coordinate for the click.
+#         hold_duration (float): Time in seconds to hold the click.
+#     """
+#     # Simulate left mouse button down
+#     mouse_event(kCGEventLeftMouseDown, x, y)
+
+#     # Hold the click for the specified duration
+#     time.sleep(hold_duration)
+
+#     # Simulate left mouse button up
+#     mouse_event(kCGEventLeftMouseUp, x, y)
+#     log(f"Force click performed at ({x}, {y}) with duration {hold_duration}s", "info")
+
+
+# def simulate_touch_drag(x, y, duration=0.5):
+#     mouse_event(kCGEventLeftMouseDown, x, y)
+#     time.sleep(duration)
+#     mouse_event(kCGEventLeftMouseDragged, x + 1, y + 1)  # Small drag
+#     mouse_event(kCGEventLeftMouseUp, x, y)
 
 
 # launch iphone mirroring app
@@ -420,18 +459,69 @@ def main():
     #         curr_y += loc.height // 4
     #         pag.dragTo((region[0] + region[2]) * 0.925, curr_y, button="left", duration=0.5)
 
-    # switch to party VIII - QP farming party
-    switch_party(region, 8)
+    # # switch to party VIII - QP farming party
+    # switch_party(region, 8)
 
-    # start quest
-    try:
-        loc_start_quest = pag.locateCenterOnScreen("img/screenshots/start_quest.png", confidence=0.8)
-        pag.moveTo(loc_start_quest.x // 2, loc_start_quest.y // 2)
+    # # go back to support servant screen and go through process again - required to click start quest
+    # try:
+    #     loc_return = pag.locateCenterOnScreen("img/screenshots/party_screen_return_btn.png", confidence=0.8)
+    #     pag.moveTo(loc_return.x // 2, loc_return.y // 2)
+    #     pag.click()
+    # except pag.ImageNotFoundException:
+    #     pag.moveTo((region[0] + region[2]) * 0.125, (region[1] + region[3]) * 0.25)
+    #     pag.click()
 
-        pag.click(button="right")
+    # # find end of scrollbar if need to scroll
+    # loc = pag.locateOnScreen(
+    #     "img/screenshots/friend_support_scrollbar.png", confidence=0.8
+    # )
+    # curr_y = (loc.top + loc.height) // 2
+    # pag.moveTo((loc.left + (loc.width / 2)) // 2, curr_y)
 
-    except pag.ImageNotFoundException:
-        action_text(general_fields, "img/screenshots/start_quest.png", "Start Quest", [0.88, 0.9])
+    # found = False
+    # while not found:
+    #     try:
+    #         # select castoria
+    #         loc_support = pag.locateCenterOnScreen(
+    #             "img/screenshots/friend_support_altria_caster.png", confidence=0.8
+    #         )
+    #         pag.moveTo(loc_support.x // 2, loc_support.y // 2)
+    #         pag.click()
+    #         found = True
+    #     except pag.ImageNotFoundException:
+    #         # scroll to next supports
+    #         curr_y += loc.height // 4
+    #         pag.dragTo(
+    #             (region[0] + region[2]) * 0.925, curr_y, button="left", duration=0.5
+    #         )
+
+    # # start quest
+    # try:
+    #     loc_start_quest = pag.locateCenterOnScreen("img/screenshots/start_quest.png", confidence=0.8)
+    #     pag.moveTo(loc_start_quest.x // 2, loc_start_quest.y // 2)
+
+    #     pag.click()
+
+    # except pag.ImageNotFoundException:
+    #     action_text(general_fields, "img/screenshots/start_quest.png", "Start Quest", [0.88, 0.9])
+
+    # wait for battle screen to load
+    found = False
+    while not found:
+        try:
+            loc_battle_menu = pag.locateCenterOnScreen(
+                "img/screenshots/battle_screen_menu_btn.png", confidence=0.8
+            )
+            found = True
+        except pag.ImageNotFoundException:
+            capture_screenshot(
+                region={"top": top, "left": left, "width": width, "height": height},
+                output_path="img/screenshots/battle_screen_menu_btn_found.png",
+            )
+            found = check_text_in_image(
+                "img/screenshots/first_tap_on_open.png", "Battle Menu"
+            )
+        time.sleep(1)
 
 
 if __name__ == "__main__":
