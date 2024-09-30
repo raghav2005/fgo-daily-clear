@@ -194,13 +194,36 @@ def switch_party(region, party_num):
     pag.click()
 
 
-def skill_click(region, servant_num, skill_num):
+def skill_click(region, servant_num, skill_num, servant_select_num=2):
     pag.moveTo(
         (region[0] + region[2])
         * (0.085 + (0.2 * (servant_num - 1)) + (0.055 * (skill_num - 1))),
         (region[1] + region[3]) * 0.8075,
     )
     pag.click()
+    time.sleep(1)
+
+    target_selectable = False
+    try:
+        loc = pag.locateCenterOnScreen("img/screenshots/skill_select_servant_close_btn.png", confidence=0.8)
+        target_selectable = True
+    except:
+        capture_screenshot(
+            region={"top": top, "left": left, "width": width, "height": height},
+            output_path="img/screenshots/skill_target_selectable_screen.png",
+        )
+        search_words = ["Select", "Target", "Select Target"]
+        search_words_results = [
+            check_text_in_image(
+                "img/screenshots/skill_target_selectable_screen.png", search_word
+            )
+            for search_word in search_words
+        ]
+        if True in search_words_results:
+            target_selectable = True
+
+    if target_selectable:
+        pag.moveTo((region[0] + region[2]) * (0.3 + (0.2 * (servant_select_num - 1))), (region[1] + region[3]) * 0.625)
 
 
 def action_text(
@@ -514,26 +537,27 @@ def main():
     # except pag.ImageNotFoundException:
     #     action_text(general_fields, "img/screenshots/start_quest.png", "Start Quest", [0.88, 0.9])
 
-    # wait for battle screen to load
-    found = False
-    while not found:
-        try:
-            loc_battle_menu = pag.locateCenterOnScreen(
-                "img/screenshots/battle_screen_menu_btn.png", confidence=0.8
-            )
-            found = True
-        except pag.ImageNotFoundException:
-            capture_screenshot(
-                region={"top": top, "left": left, "width": width, "height": height},
-                output_path="img/screenshots/battle_screen_menu_btn_found.png",
-            )
-            found = check_text_in_image(
-                "img/screenshots/first_tap_on_open.png", "Battle Menu"
-            )
-        time.sleep(1)
+    # # wait for battle screen to load
+    # found = False
+    # while not found:
+    #     try:
+    #         loc_battle_menu = pag.locateCenterOnScreen(
+    #             "img/screenshots/battle_screen_menu_btn.png", confidence=0.8
+    #         )
+    #         found = True
+    #     except pag.ImageNotFoundException:
+    #         capture_screenshot(
+    #             region={"top": top, "left": left, "width": width, "height": height},
+    #             output_path="img/screenshots/battle_screen_menu_btn_found.png",
+    #         )
+    #         found = check_text_in_image(
+    #             "img/screenshots/first_tap_on_open.png", "Battle Menu"
+    #         )
+    #     time.sleep(1)
 
-    # click on a skill
-    skill_click(region, 1, 2)
+    # # click on a skill
+    # skill_click(region, 1, 2)
+
 
 if __name__ == "__main__":
     main()
