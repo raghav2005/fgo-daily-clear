@@ -238,6 +238,58 @@ def skill_click(general_fields, servant_num, skill_num, servant_select_num=2):
     time.sleep(1)
 
 
+def master_skill_click(general_fields, skill_num, servant_select_num=2):
+    region = general_fields["region"]
+    left, top, width, height = (
+        general_fields["left"],
+        general_fields["top"],
+        general_fields["width"],
+        general_fields["height"],
+    )
+
+    try:
+        loc_master_skill = pag.locateCenterOnScreen(
+            "img/screenshots/master_skill_btn.png", confidence=0.8
+        )
+        pag.moveTo(loc_master_skill.x // 2, loc_master_skill.y // 2)
+    except pag.ImageNotFoundException:
+        pag.moveTo((region[0] + region[2]) * 0.895, (region[1] + region[3]) * 0.55)
+    pag.click()
+
+    pag.moveTo(
+        (region[0] + region[2]) * (0.715 + (0.055 * (skill_num - 1))),
+        (region[1] + region[3]) * 0.54,
+    )
+    pag.click()
+    time.sleep(1)
+
+    target_selectable = False
+    try:
+        loc = pag.locateCenterOnScreen("img/screenshots/skill_select_servant_close_btn.png", confidence=0.8)
+        target_selectable = True
+    except:
+        capture_screenshot(
+            region={"top": top, "left": left, "width": width, "height": height},
+            output_path="img/screenshots/skill_target_selectable_screen.png",
+        )
+        search_words = ["Select", "Target", "Select Target"]
+        search_words_results = [
+            check_text_in_image(
+                "img/screenshots/skill_target_selectable_screen.png", search_word
+            )
+            for search_word in search_words
+        ]
+        if True in search_words_results:
+            target_selectable = True
+
+    if target_selectable:
+        pag.moveTo((region[0] + region[2]) * (0.3 + (0.2 * (servant_select_num - 1))), (region[1] + region[3]) * 0.625)
+        pag.click()
+
+    wait_for_battle_screen(general_fields)
+    time.sleep(1)
+
+
 def action_text(
     general_fields, img_path, text_loc_word, harcoded_screen_percentages, search_words = []):
     region = general_fields["region"]
@@ -576,10 +628,10 @@ def main():
     # except pag.ImageNotFoundException:
     #     action_text(general_fields, "img/screenshots/start_quest.png", "Start Quest", [0.88, 0.9])
 
-    # wait for battle screen to load
-    wait_for_battle_screen(general_fields)
+    # # wait for battle screen to load
+    # wait_for_battle_screen(general_fields)
 
-    # NOTE: SKILL CLICKS FOR EXTREME QP W/ 2x CASTORIA + DA VINCI (RIDER) (Da Vinci (Rider) is in slot 2)
+    # # NOTE: SKILL CLICKS FOR EXTREME QP W/ 2x CASTORIA + DA VINCI (RIDER) (Da Vinci (Rider) is in slot 2)
     # click on a skill
     # skill_click(general_fields, 1, 1)
     # skill_click(general_fields, 1, 2, 2)
@@ -588,6 +640,7 @@ def main():
     # skill_click(general_fields, 3, 1)
     # skill_click(general_fields, 3, 2, 2)
     # skill_click(general_fields, 3, 3, 2)
+    master_skill_click(general_fields, 3, 2)
 
 
 if __name__ == "__main__":
