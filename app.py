@@ -126,7 +126,7 @@ def find_text_location(image_path, search_text):
 # launch iphone mirroring app
 def launch_iphone_mirroring():
     try:
-        script = 'tell application "iphone Mirroring" to activate'
+        script = 'tell application "iPhone Mirroring" to activate'
         subprocess.run(["osascript", "-e", script], check=True)
 
         log("iphone mirroring app launched.", "debug")
@@ -171,7 +171,7 @@ def get_iphone_mirroring_region():
         if len(win_bounds) == 4:
             left, top, width, height = map(lambda x: abs(int(x)), win_bounds)
             log(
-                f"iphone Mirroring window region: {(left, top + 30, width, height)}",
+                f"iphone mirroring window region: {(left, top + 30, width, height)}",
                 "info",
             )
 
@@ -190,6 +190,15 @@ def switch_party(region, party_num):
     pag.moveTo(
         (region[0] + region[2]) * (0.428 + (0.01575 * (party_num - 1))),
         (region[1] + region[3]) * 0.255,
+    )
+    pag.click()
+
+
+def skill_click(region, servant_num, skill_num):
+    pag.moveTo(
+        (region[0] + region[2])
+        * (0.085 + (0.2 * (servant_num - 1)) + (0.055 * (skill_num - 1))),
+        (region[1] + region[3]) * 0.8075,
     )
     pag.click()
 
@@ -523,6 +532,8 @@ def main():
             )
         time.sleep(1)
 
+    # click on a skill
+    skill_click(region, 1, 2)
 
 if __name__ == "__main__":
     main()
