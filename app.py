@@ -5,6 +5,7 @@ import os
 import pytesseract
 import mss
 import mss.tools
+import random
 from loguru import logger
 from PIL import Image
 from Quartz.CoreGraphics import (
@@ -234,7 +235,7 @@ def skill_click(general_fields, servant_num, skill_num, servant_select_num=2):
         pag.moveTo((region[0] + region[2]) * (0.3 + (0.2 * (servant_select_num - 1))), (region[1] + region[3]) * 0.625)
         pag.click()
 
-    wait_for_battle_screen(general_fields)
+    wait_for_screen(general_fields, "img/screenshots/battle_screen_menu_btn.png", "img/screenshots/battle_screen_menu_btn_found.png", "Battle Menu")
     time.sleep(1)
 
 
@@ -286,8 +287,24 @@ def master_skill_click(general_fields, skill_num, servant_select_num=2):
         pag.moveTo((region[0] + region[2]) * (0.3 + (0.2 * (servant_select_num - 1))), (region[1] + region[3]) * 0.625)
         pag.click()
 
-    wait_for_battle_screen(general_fields)
+    wait_for_screen(general_fields, "img/screenshots/battle_screen_menu_btn.png", "img/screenshots/battle_screen_menu_btn_found.png", "Battle Menu")
     time.sleep(1)
+
+
+def np_card_click(region, servant_num):
+    pag.moveTo(
+        (region[0] + region[2]) * (0.355 + (0.145 * (servant_num - 1))),
+        (region[1] + region[3]) * 0.4,
+    )
+    pag.click()
+
+
+def face_card_click(region, face_card_num):
+    pag.moveTo(
+        (region[0] + region[2]) * (0.18 + (0.16 * (face_card_num - 1))),
+        (region[1] + region[3]) * 0.725,
+    )
+    pag.click()
 
 
 def action_text(
@@ -335,7 +352,7 @@ def action_text(
         time.sleep(GENERAL_LONG_SLEEP)
 
 
-def wait_for_battle_screen(general_fields):
+def wait_for_screen(general_fields, loc_img_path, ss_img_path, search_text):
     region = general_fields["region"]
     left, top, width, height = (
         general_fields["left"],
@@ -348,16 +365,16 @@ def wait_for_battle_screen(general_fields):
     while not found:
         try:
             loc_battle_menu = pag.locateCenterOnScreen(
-                "img/screenshots/battle_screen_menu_btn.png", confidence=0.8
+                loc_img_path, confidence=0.8
             )
             found = True
         except pag.ImageNotFoundException:
             capture_screenshot(
                 region={"top": top, "left": left, "width": width, "height": height},
-                output_path="img/screenshots/battle_screen_menu_btn_found.png",
+                output_path=ss_img_path,
             )
             found = check_text_in_image(
-                "img/screenshots/first_tap_on_open.png", "Battle Menu"
+                ss_img_path, search_text
             )
         time.sleep(1)
 
@@ -639,8 +656,9 @@ def main():
     # except pag.ImageNotFoundException:
     #     action_text(general_fields, "img/screenshots/start_quest.png", "Start Quest", [0.88, 0.9])
 
+    # # Turn 1
     # # wait for battle screen to load
-    # wait_for_battle_screen(general_fields)
+    # wait_for_screen(general_fields, "img/screenshots/battle_screen_menu_btn.png", "img/screenshots/battle_screen_menu_btn_found.png", "Battle Menu")
 
     # # NOTE: SKILL CLICKS FOR EXTREME QP W/ 2x CASTORIA + DA VINCI (RIDER) (Da Vinci (Rider) is in slot 2)
     # skill_click(general_fields, 1, 1)
@@ -659,8 +677,73 @@ def main():
     # pag.moveTo((region[0] + region[2]) * 0.845, (region[1] + region[3]) * 0.865)
     # pag.click()
 
-    pag.moveTo((region[0] + region[2]) * 0.5, (region[1] + region[3]) * 0.4)
-    pag.moveTo((region[0] + region[2]) * 0.625, (region[1] + region[3]) * 0.4)
+    # np_card_click(region, 2)
+
+    # old_random = 0
+    # for i in range(2):
+    #     new_random = random.randint(1, 5)
+
+    #     while new_random == old_random:
+    #         new_random = random.randint(1, 5)
+
+    #     face_card_click(region, new_random)
+    #     old_random = new_random
+
+    # # Turn 2
+    # wait_for_screen(general_fields, "img/screenshots/battle_screen_menu_btn.png", "img/screenshots/battle_screen_menu_btn_found.png", "Battle Menu")
+
+    # pag.moveTo((region[0] + region[2]) * 0.845, (region[1] + region[3]) * 0.865)
+    # pag.click()
+
+    # np_card_click(region, 2)
+
+    # old_random = 0
+    # for i in range(2):
+    #     new_random = random.randint(1, 5)
+
+    #     while new_random == old_random:
+    #         new_random = random.randint(1, 5)
+
+    #     face_card_click(region, new_random)
+    #     old_random = new_random
+
+    # # Turn 3
+    # wait_for_screen(general_fields, "img/screenshots/battle_screen_menu_btn.png", "img/screenshots/battle_screen_menu_btn_found.png", "Battle Menu")
+
+    # skill_click(general_fields, 2, 2)
+    # skill_click(general_fields, 2, 3)
+    # master_skill_click(general_fields, 1, 2)
+
+    # pag.moveTo((region[0] + region[2]) * 0.845, (region[1] + region[3]) * 0.865)
+    # pag.click()
+
+    # np_order = [2, 1, 3]
+    # for np in np_order:
+    #     np_card_click(region, np)
+
+    # # wait for servant bond screen
+    # wait_for_screen(general_fields, "img/screenshots/servant_bond_after_battle.png", "img/screenshots/servant_bond_screen_found.png", "Servant Bond")
+    # pag.moveTo((region[0] + region[2]) * 0.5, (region[1] + region[3]) * 0.5)
+    # pag.click()
+
+    # # wait for master exp and mystic code exp screen
+    # wait_for_screen(general_fields, "img/screenshots/double_triangle_master_mystic_exp.png", "img/screenshots/master_mystic_exp_screen_found.png", "Master EXP")
+    # pag.moveTo((region[0] + region[2]) * 0.5, (region[1] + region[3]) * 0.5)
+    # pag.click()
+
+    # # next after items dropped received
+    # wait_for_screen(
+    #     general_fields,
+    #     "img/screenshots/next_items_dropped_btn.png",
+    #     "img/screenshots/items_dropped_next_btn_found.png",
+    #     "QP Gained",
+    # )
+    # try:
+    #     loc_start_quest = pag.locateCenterOnScreen("img/screenshots/next_items_dropped_btn.png", confidence=0.8)
+    #     pag.moveTo(loc_start_quest.x // 2, loc_start_quest.y // 2)
+    #     pag.click()
+    # except pag.ImageNotFoundException:
+    #     action_text(general_fields, "img/screenshots/next_items_dropped_btn.png", "Next", [0.8, 0.9])
 
 
 if __name__ == "__main__":
