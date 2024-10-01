@@ -739,11 +739,27 @@ def main():
     #     "QP Gained",
     # )
     # try:
-    #     loc_start_quest = pag.locateCenterOnScreen("img/screenshots/next_items_dropped_btn.png", confidence=0.8)
-    #     pag.moveTo(loc_start_quest.x // 2, loc_start_quest.y // 2)
+    #     loc_next_btn = pag.locateCenterOnScreen("img/screenshots/next_items_dropped_btn.png", confidence=0.8)
+    #     pag.moveTo(loc_next_btn.x // 2, loc_next_btn.y // 2)
     #     pag.click()
     # except pag.ImageNotFoundException:
     #     action_text(general_fields, "img/screenshots/next_items_dropped_btn.png", "Next", [0.8, 0.9])
+
+    # # NOTE: need to do text analysis to see how much AP and store - potentially in a variable and using apples?
+
+    # # repeat quest
+    wait_for_screen(
+        general_fields,
+        "img/screenshots/repeat_quest_btn.png",
+        "img/screenshots/repeat_quest_btn_found.png",
+        "AP Required",
+    )
+    try:
+        loc_repeat_quest = pag.locateCenterOnScreen("img/screenshots/repeat_quest_btn.png", confidence=0.8)
+        pag.moveTo(loc_repeat_quest.x // 2, loc_repeat_quest.y // 2)
+        pag.click()
+    except pag.ImageNotFoundException:
+        action_text(general_fields, "img/screenshots/repeat_quest_btn.png", "Repeat", [0.625, 0.82])
 
 
 if __name__ == "__main__":
