@@ -9,3 +9,7 @@ This repo contains code that allows a user to clear a specific daily quest for t
 - "Begin Data Update" in case of an update button
 
 - Find a way to know when next loading screens are, rather than just doing time.sleep
+
+- CHANGE ALL HARDCODED SLEEPS TO DYNAMIC WAITS UNTIL SOMETHING ON THE SCREEN APPEARS
+
+- Speed up skill animations by clicking somewhere after skill use - around where the actual team is shown (I'm guessing (x0.7, x0.6) or something)

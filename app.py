@@ -384,6 +384,19 @@ def main():
     # left, top, width, height = region
     # general_fields = {"region": region, "left": left, "top": top, "width": width, "height": height}
 
+    # ### ALL OF THIS SHOULD BE WHILE WAITING FOR FIRST LOADING SCREEN AND THEN SECOND LOADING SCREEN
+    # # in case of data update
+    # #TODO: click on begin data update
+
+    # # in case of video playback intro
+    # try:
+    #     loc_skip_video = pag.locateCenterOnScreen("img/screenshots/skip_video_playback_intro.png", confidence=0.8)
+    #     pag.moveTo(loc_skip_video.x // 2, loc_skip_video.y // 2)
+    #     pag.click()
+    # except pag.ImageNotFoundException:
+    #     pass
+    # ###
+
     # # click for first loading screen
     # found = False
     # while not found:
@@ -622,9 +635,7 @@ def main():
     # try:
     #     loc_start_quest = pag.locateCenterOnScreen("img/screenshots/start_quest.png", confidence=0.8)
     #     pag.moveTo(loc_start_quest.x // 2, loc_start_quest.y // 2)
-
     #     pag.click()
-
     # except pag.ImageNotFoundException:
     #     action_text(general_fields, "img/screenshots/start_quest.png", "Start Quest", [0.88, 0.9])
 
@@ -632,7 +643,6 @@ def main():
     # wait_for_battle_screen(general_fields)
 
     # # NOTE: SKILL CLICKS FOR EXTREME QP W/ 2x CASTORIA + DA VINCI (RIDER) (Da Vinci (Rider) is in slot 2)
-    # click on a skill
     # skill_click(general_fields, 1, 1)
     # skill_click(general_fields, 1, 2, 2)
     # skill_click(general_fields, 1, 3, 2)
@@ -640,7 +650,17 @@ def main():
     # skill_click(general_fields, 3, 1)
     # skill_click(general_fields, 3, 2, 2)
     # skill_click(general_fields, 3, 3, 2)
-    master_skill_click(general_fields, 3, 2)
+    # master_skill_click(general_fields, 3, 2)
+
+    # # click on attack, then NP skill click, then face cards click (random for now)
+    # # NOTE: for face card selecting frontend (when being made), maybe give users a list such that they can set the priority for turn order (obviously including NP), but if none selected, then just randomize the face card selection (but not NP)
+
+    # # click on attack
+    # pag.moveTo((region[0] + region[2]) * 0.845, (region[1] + region[3]) * 0.865)
+    # pag.click()
+
+    pag.moveTo((region[0] + region[2]) * 0.5, (region[1] + region[3]) * 0.4)
+    pag.moveTo((region[0] + region[2]) * 0.625, (region[1] + region[3]) * 0.4)
 
 
 if __name__ == "__main__":
