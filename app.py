@@ -636,7 +636,7 @@ def main():
 
         # find end of scrollbar if need to scroll
         loc = pag.locateOnScreen(
-            "img/screenshots/friend_support_scrollbar.png", confidence=0.8g
+            "img/screenshots/friend_support_scrollbar.png", confidence=0.8
         )
         curr_y = (loc.top + loc.height) // 2
         pag.moveTo((loc.left + (loc.width / 2)) // 2, curr_y)
