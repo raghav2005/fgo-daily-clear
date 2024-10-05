@@ -34,7 +34,7 @@ def log(msg, msg_type="success"):
 
 GENERAL_LONG_SLEEP = 10
 pag.PAUSE = 1
-
+img_prefix = "img/screenshots/"
 
 def capture_screenshot(region=None, output_path="screenshot.png"):
     with mss.mss() as sct:
