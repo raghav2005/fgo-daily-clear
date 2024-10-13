@@ -50,6 +50,13 @@ def capture_screenshot(region=None, output_path="screenshot.png"):
         mss.tools.to_png(screenshot.rgb, screenshot.size, output=output_path)
 
 
+def delete_file(file_path):
+    try:
+        os.remove(file_path)
+    except Exception as e:
+        log(f"failed to delete file: {file_path} - {e}", "error")
+
+
 # function to perform OCR on a screenshot and check for specific text
 def check_text_in_image(image_path, search_text):
     # load the image
@@ -194,6 +201,11 @@ def switch_party(region, party_num):
     pag.click()
 
 
+def general_skill_speedup(region):
+    pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.55)
+    pag.click()
+
+
 def skill_click(general_fields, servant_num, skill_num, servant_select_num=2):
     region = general_fields["region"]
     left, top, width, height = (
@@ -209,7 +221,6 @@ def skill_click(general_fields, servant_num, skill_num, servant_select_num=2):
         (region[1] + region[3]) * 0.8075,
     )
     pag.click()
-    time.sleep(1)
 
     target_selectable = False
     try:
@@ -222,14 +233,11 @@ def skill_click(general_fields, servant_num, skill_num, servant_select_num=2):
             region={"top": top, "left": left, "width": width, "height": height},
             output_path="img/screenshots/skill_target_selectable_screen.png",
         )
-        search_words = ["Select", "Target", "Select Target"]
-        search_words_results = [
-            check_text_in_image(
-                "img/screenshots/skill_target_selectable_screen.png", search_word
-            )
-            for search_word in search_words
-        ]
-        if True in search_words_results:
+        search_word_result = check_text_in_image(
+            "img/screenshots/skill_target_selectable_screen.png", "Select Target"
+        )
+        delete_file("img/screenshots/skill_target_selectable_screen.png")
+        if search_word_result:
             target_selectable = True
 
     if target_selectable:
@@ -239,16 +247,8 @@ def skill_click(general_fields, servant_num, skill_num, servant_select_num=2):
         )
         pag.click()
 
-    pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.55)
-    pag.click()
-
-    wait_for_screen(
-        general_fields,
-        "img/screenshots/battle_screen_menu_btn.png",
-        "img/screenshots/battle_screen_menu_btn_found.png",
-        "Battle Menu",
-    )
-    time.sleep(1)
+    general_skill_speedup(region)
+    wait_for_battle_menu(general_fields)
 
 
 def master_skill_click(general_fields, skill_num, servant_select_num=2):
@@ -274,7 +274,6 @@ def master_skill_click(general_fields, skill_num, servant_select_num=2):
         (region[1] + region[3]) * 0.54,
     )
     pag.click()
-    time.sleep(1)
 
     target_selectable = False
     try:
@@ -287,14 +286,11 @@ def master_skill_click(general_fields, skill_num, servant_select_num=2):
             region={"top": top, "left": left, "width": width, "height": height},
             output_path="img/screenshots/skill_target_selectable_screen.png",
         )
-        search_words = ["Select", "Target", "Select Target"]
-        search_words_results = [
-            check_text_in_image(
-                "img/screenshots/skill_target_selectable_screen.png", search_word
-            )
-            for search_word in search_words
-        ]
-        if True in search_words_results:
+        search_word_result = check_text_in_image(
+            "img/screenshots/skill_target_selectable_screen.png", "Select Target"
+        )
+        delete_file("img/screenshots/skill_target_selectable_screen.png")
+        if search_word_result:
             target_selectable = True
 
     if target_selectable:
@@ -304,16 +300,8 @@ def master_skill_click(general_fields, skill_num, servant_select_num=2):
         )
         pag.click()
 
-    pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.55)
-    pag.click()
-
-    wait_for_screen(
-        general_fields,
-        "img/screenshots/battle_screen_menu_btn.png",
-        "img/screenshots/battle_screen_menu_btn_found.png",
-        "Battle Menu",
-    )
-    time.sleep(1)
+    general_skill_speedup(region)
+    wait_for_battle_menu(general_fields)
 
 
 def np_card_click(region, servant_num):
@@ -354,6 +342,7 @@ def action_text(
 
     if search_words == []:
         bbox = find_text_location(img_path, text_loc_word)
+        delete_file(img_path)
         if bbox:
             x, y, width, height = bbox
             log(
@@ -405,18 +394,23 @@ def wait_for_screen(general_fields, loc_img_path, ss_img_path, search_text):
         try:
             loc_battle_menu = pag.locateCenterOnScreen(loc_img_path, confidence=0.8)
             found = True
-            
+
             log(f"found screen: {search_text}", "success")
+            time.sleep(1)
             return
         except pag.ImageNotFoundException:
             capture_screenshot(
                 region={"top": top, "left": left, "width": width, "height": height},
                 output_path=ss_img_path,
             )
-            found = check_text_in_image(ss_img_path, search_text)
+            found = check_text_in_image(ss_img_path, search_text)            
+            delete_file(ss_img_path)
 
-            log(f"found text: {search_text}", "success")
-            return
+            if found:
+                log(f"found text: {search_text}", "success")
+                time.sleep(1)
+                return
+        time.sleep(0.25)
 
 
 def launch_fgo():
@@ -499,6 +493,7 @@ def get_to_fgo_home_screen(general_fields):
         first_loading_screen_found = check_text_in_image(
             "img/screenshots/first_tap_on_open.png", "Please Tap the Screen"
         )
+        delete_file("img/screenshots/first_tap_on_open.png")
 
         if not first_loading_screen_found:
             # check for cache clear screen
@@ -578,6 +573,7 @@ def news_popup_handler(general_fields):
         check_text_in_image("img/screenshots/potential_news.png", search_word)
         for search_word in search_words
     ]
+    delete_file("img/screenshots/potential_news.png")
     if True in search_words_results:
         pag.moveTo((region[0] + region[2]) * 0.885, (region[1] + region[3]) * 0.24)
         pag.click()
@@ -625,6 +621,7 @@ def other_popups_handler(general_fields):
                 pag.moveTo(
                     (region[0] + region[2]) * 0.5, (region[1] + region[3]) * 0.835
                 )
+            delete_file("img/screenshots/potential_close_btns.png")
             pag.click()
 
         try:
@@ -657,10 +654,282 @@ def handle_all_popups(general_fields):
             other_popups_handler(general_fields)
 
 
+# drag scroll bar to top of screen
+def drag_scrollbar_to_top_quest_selection(region):
+    pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.35)
+    pag.click()
+    pag.dragTo(
+        (region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.3, button="left"
+    )
+
+
+def open_chaldea_gate_menu(general_fields):
+    region = general_fields["region"]
+    left, top, width, height = (
+        general_fields["left"],
+        general_fields["top"],
+        general_fields["width"],
+        general_fields["height"],
+    )
+
+    drag_scrollbar_to_top_quest_selection(region)
+    wait_for_screen(
+        general_fields,
+        "img/screenshots/chaldea_gate_banner.png",
+        "img/screenshots/fgo_in_game_homescreen.png",
+        "Chaldea Gate",
+    )
+
+    # open Chaldea Gate menu
+    try:
+        loc_chaldea_gate = pag.locateCenterOnScreen(
+            "img/screenshots/chaldea_gate_banner.png", confidence=0.8
+        )
+        pag.moveTo(loc_chaldea_gate.x // 2, loc_chaldea_gate.y // 2)
+        pag.click()
+    except pag.ImageNotFoundException:
+        capture_screenshot(
+            region={"top": top, "left": left, "width": width, "height": height},
+            output_path="img/screenshots/fgo_in_game_homescreen.png",
+        )
+        bbox = find_text_location(
+            "img/screenshots/fgo_in_game_homescreen.png", "Chaldea Gate"
+        )
+        if bbox:
+            x, y, width, height = bbox
+            log(
+                f"Bounding box for 'Chaldea Gate': x={x}, y={y}, width={width}, height={height}"
+            )
+            pag.moveTo(region[0] + x, region[1] + y)
+        else:
+            pag.moveTo(
+                (region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.61
+            )  # NOTE: won't work if event - change 0.61 to something higher
+        delete_file("img/screenshots/fgo_in_game_homescreen.png")
+        pag.click()
+
+
+def open_daily_quests_menu(general_fields):
+    region = general_fields["region"]
+    left, top, width, height = (
+        general_fields["left"],
+        general_fields["top"],
+        general_fields["width"],
+        general_fields["height"],
+    )
+
+    drag_scrollbar_to_top_quest_selection(region)
+    wait_for_screen(
+        general_fields,
+        "img/screenshots/daily_quests_banner.png",
+        "img/screenshots/chaldea_gate_menu.png",
+        "Daily Quests",
+    )
+
+    # open Daily Quests menu
+    capture_screenshot(
+        region={"top": top, "left": left, "width": width, "height": height},
+        output_path="img/screenshots/chaldea_gate_menu.png",
+    )
+    bbox = find_text_location("img/screenshots/chaldea_gate_menu.png", "Daily Quests")
+    if bbox:
+        x, y, width, height = bbox
+        log(
+            f"Bounding box for 'Daily Quests': x={x}, y={y}, width={width}, height={height}"
+        )
+        pag.moveTo(region[0] + x, region[1] + y)
+    else:
+        pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
+    delete_file("img/screenshots/chaldea_gate_menu.png")
+    pag.click()
+
+
+def open_extreme_qp_quest(general_fields):
+    region = general_fields["region"]
+    left, top, width, height = (
+        general_fields["left"],
+        general_fields["top"],
+        general_fields["width"],
+        general_fields["height"],
+    )
+
+    # move scrollbar to bottom of screen for extreme QP quest
+    pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.84)
+    pag.click()
+    wait_for_screen(
+        general_fields,
+        "img/screenshots/enter_the_treasure_vault_extreme_banner.png",
+        "img/screenshots/daily_quests_menu.png",
+        "Enter the Treasure Vault - Extreme",
+    )
+
+    # open Extreme QP quest
+    capture_screenshot(
+        region={"top": top, "left": left, "width": width, "height": height},
+        output_path="img/screenshots/daily_quests_menu.png",
+    )
+    bbox = find_text_location(
+        "img/screenshots/daily_quests_menu.png",
+        "Enter the Treasure Vault - Extreme",
+    )
+    if bbox:
+        x, y, width, height = bbox
+        log(
+            f"Bounding box for 'Enter the Treasure Vault - Extreme': x={x}, y={y}, width={width}, height={height}"
+        )
+        pag.moveTo(region[0] + x, region[1] + y)
+    else:
+        # click on QP Extreme quest
+        pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
+        pag.click()
+    delete_file("img/screenshots/daily_quests_menu.png")
+
+
+def choose_support_class(class_name="caster"):
+    try:
+        if class_name == "caster":
+            loc = pag.locateCenterOnScreen(
+                "img/screenshots/friend_support_caster_class.png", confidence=0.8
+            )
+        pag.moveTo(loc.x // 2, loc.y // 2)
+        pag.click()
+
+        log("selected caster class", "success")
+
+    except pag.ImageNotFoundException:
+        log(f"failed to select {class_name} class", "error")
+
+
+# make sure at top of support list
+def drag_scrollbar_to_top_support_selection(region):
+    pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.4)
+    pag.click()
+
+
+def select_support_servant(region, support_img_path):
+    # find end of scrollbar if need to scroll
+    loc = pag.locateOnScreen(
+        "img/screenshots/friend_support_scrollbar.png", confidence=0.8
+    )
+    curr_y = (loc.top + loc.height) // 2
+    pag.moveTo((loc.left + (loc.width / 2)) // 2, curr_y)
+
+    found = False
+    while not found:
+        try:
+            # select castoria
+            loc_support = pag.locateCenterOnScreen(
+                support_img_path, confidence=0.8
+            )
+            pag.moveTo(loc_support.x // 2, loc_support.y // 2)
+            pag.click()
+            found = True
+        except pag.ImageNotFoundException:
+            # scroll to next supports
+            curr_y += loc.height // 4
+            pag.dragTo(
+                (region[0] + region[2]) * 0.925, curr_y, button="left", duration=0.5
+            )
+
+
+# go back to support servant screen and go through process again - required to click start quest
+def go_back_to_support_selection(region):
+    try:
+        loc_return = pag.locateCenterOnScreen(
+            "img/screenshots/party_screen_return_btn.png", confidence=0.8
+        )
+        pag.moveTo(loc_return.x // 2, loc_return.y // 2)
+        pag.click()
+    except pag.ImageNotFoundException:
+        pag.moveTo((region[0] + region[2]) * 0.125, (region[1] + region[3]) * 0.25)
+        pag.click()
+
+
+def start_quest(general_fields):
+    try:
+        loc_start_quest = pag.locateCenterOnScreen(
+            "img/screenshots/start_quest.png", confidence=0.8
+        )
+        pag.moveTo(loc_start_quest.x // 2, loc_start_quest.y // 2)
+        pag.click()
+    except pag.ImageNotFoundException:
+        action_text(
+            general_fields,
+            "img/screenshots/start_quest.png",
+            "Start Quest",
+            [0.88, 0.9],
+        )
+
+
+# wait for battle screen to load
+def wait_for_battle_menu(general_fields, turn_num=2):
+    region = general_fields["region"]
+    left, top, width, height = (
+        general_fields["left"],
+        general_fields["top"],
+        general_fields["width"],
+        general_fields["height"],
+    )
+
+    found = False
+    while not found:
+        try:
+            loc_battle_menu = pag.locateCenterOnScreen(
+                "img/screenshots/battle_screen_menu_btn.png", confidence=0.8
+            )
+            found = True
+            log(f"found battle menu", "success")
+            return
+        except pag.ImageNotFoundException:
+            log(f"did not find battle menu", "warning")
+            time.sleep(0.25)
+
+    if turn_num == 1:
+        time.sleep(4)
+    else:
+        time.sleep(1)
+
+
+def open_attack_options(region):
+    # click on attack
+    pag.moveTo((region[0] + region[2]) * 0.845, (region[1] + region[3]) * 0.865)
+    pag.click()
+    time.sleep(1)
+
+
+def choose_random_face_cards(region, number_of_cards=2):
+    old_random = 0
+    for i in range(2):
+        new_random = random.randint(1, 5)
+
+        while new_random == old_random:
+            new_random = random.randint(1, 5)
+
+        face_card_click(region, new_random)
+        old_random = new_random
+
+
 def main():
-    general_fields = launch_fgo()
-    get_to_fgo_home_screen(general_fields)
-    handle_all_popups(general_fields)
+    # general_fields = launch_fgo()
+    # get_to_fgo_home_screen(general_fields)
+    # handle_all_popups(general_fields)
+
+    ### START TESTING
+    launch_iphone_mirroring()
+    focus_iphone_mirroring_window()
+    move_iphone_mirroring_window()
+    focus_iphone_mirroring_window()
+
+    region = get_iphone_mirroring_region()
+    left, top, width, height = region
+    general_fields = {
+        "region": region,
+        "left": left,
+        "top": top,
+        "width": width,
+        "height": height,
+    }
+    ### END TESTING
 
     region, left, top, width, height = (
         general_fields["region"],
@@ -670,361 +939,159 @@ def main():
         general_fields["height"],
     )
 
-    # drag scroll bar to top of screen
-    pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.35)
-    pag.click()
-    pag.dragTo(
-        (region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.3, button="left"
+    # open_chaldea_gate_menu(general_fields)
+    # open_daily_quests_menu(general_fields)
+    # open_extreme_qp_quest(general_fields)
+
+    wait_for_screen(
+        general_fields,
+        "img/screenshots/select_support_menu.png",
+        "img/screenshots/select_support_menu_found.png",
+        "Select Support"
     )
 
-    # # open Chaldea Gate menu
-    # try:
-    #     loc_chaldea_gate = pag.locateCenterOnScreen(
-    #         "img/screenshots/chaldea_gate.png", confidence=0.8
-    #     )
-    #     pag.moveTo(loc_chaldea_gate.x // 2, loc_chaldea_gate.y // 2)
-    #     pag.click()
-    # except pag.ImageNotFoundException:
-    #     capture_screenshot(
-    #         region={"top": top, "left": left, "width": width, "height": height},
-    #         output_path="img/screenshots/fgo_in_game_homescreen.png",
-    #     )
-    #     bbox = find_text_location(
-    #         "img/screenshots/fgo_in_game_homescreen.png", "Chaldea Gate"
-    #     )
-    #     if bbox:
-    #         x, y, width, height = bbox
-    #         log(
-    #             f"Bounding box for 'Chaldea Gate': x={x}, y={y}, width={width}, height={height}"
-    #         )
-    #         pag.moveTo(region[0] + x, region[1] + y)
-    #     else:
-    #         pag.moveTo(
-    #             (region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.61
-    #         )  # NOTE: won't work if event - change 0.61 to something higher
-    #     pag.click()
+    # switch to caster class
+    choose_support_class("caster")
+    drag_scrollbar_to_top_support_selection(region)
+    select_support_servant(
+        region, "img/screenshots/friend_support_altria_caster.png"
+    )
 
-    # # open Daily Quests menu
-    # capture_screenshot(
-    #     region={"top": top, "left": left, "width": width, "height": height},
-    #     output_path="img/screenshots/chaldea_gate_menu.png",
-    # )
-    # bbox = find_text_location("img/screenshots/chaldea_gate_menu.png", "Daily Quests")
-    # if bbox:
-    #     x, y, width, height = bbox
-    #     log(
-    #         f"Bounding box for 'Daily Quests': x={x}, y={y}, width={width}, height={height}"
-    #     )
-    #     pag.moveTo(region[0] + x, region[1] + y)
-    # else:
-    #     pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
-    # pag.click()
+    # switch to party VIII - QP farming party
+    switch_party(region, 8)
+    go_back_to_support_selection(region)
 
-    # # drag scroll bar to top of screen
-    # pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.35)
-    # pag.click()
-    # pag.dragTo(
-    #     (region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.3, button="left"
-    # )
+    for run_turn in range(3):
 
-    # # scroll to find Extreme QP quest
-    # curr_y = (region[1] + region[3]) * 0.3
-    # capture_screenshot(
-    #     region={"top": top, "left": left, "width": width, "height": height},
-    #     output_path="img/screenshots/daily_quests_menu.png",
-    # )
-    # bbox = find_text_location(
-    #     "img/screenshots/daily_quests_menu.png", "Enter the Treasure Vault - Extreme"
-    # )
-    # if bbox:
-    #     x, y, width, height = bbox
-    #     log(
-    #         f"Bounding box for 'Enter the Treasure Valut - Extreme': x={x}, y={y}, width={width}, height={height}"
-    #     )
-    #     pag.moveTo(region[0] + x, region[1] + y)
-    # else:
-    #     while not bbox:
-    #         if curr_y >= ((region[1] + region[3]) * 0.835):
-    #             break
+        wait_for_screen(
+            general_fields,
+            "img/screenshots/friend_support_scrollbar.png",
+            "img/screenshots/friend_support_scrollbar_found.png",
+            "Select Support",
+        )
+        select_support_servant(
+            region, "img/screenshots/friend_support_altria_caster.png"
+        )
 
-    #         curr_y += (region[1] + region[3]) * 0.05
-    #         pag.dragTo((region[0] + region[2]) * 0.925, curr_y, button="left")
+        if run_turn == 0:
+            start_quest(general_fields)
 
-    #         capture_screenshot(
-    #             region={"top": top, "left": left, "width": width, "height": height},
-    #             output_path="img/screenshots/daily_quests_menu.png",
-    #         )
-    #         bbox = find_text_location(
-    #             "img/screenshots/daily_quests_menu.png",
-    #             "Enter the Treasure Vault - Extreme",
-    #         )
+        # Turn 1 (for battle)
+        wait_for_battle_menu(general_fields, 1)
+        
+        time.sleep(1)
+        general_skill_speedup(region)
 
-    #     if bbox:
-    #         x, y, width, height = bbox
-    #         log(
-    #             f"Bounding box for 'Enter the Treasure Vault - Extreme': x={x}, y={y}, width={width}, height={height}"
-    #         )
-    #         pag.moveTo(region[0] + x, region[1] + y)
-    #     else:
-    #         pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.835)
-    #         pag.click()
+        # NOTE: SKILL CLICKS FOR EXTREME QP W/ 2x CASTORIA + DA VINCI (RIDER) (Da Vinci (Rider) is in slot 2)
+        skill_click(general_fields, 1, 1)
+        skill_click(general_fields, 1, 2, 2)
+        skill_click(general_fields, 1, 3, 2)
+        skill_click(general_fields, 2, 1)
+        skill_click(general_fields, 3, 1)
+        skill_click(general_fields, 3, 2, 2)
+        skill_click(general_fields, 3, 3, 2)
+        master_skill_click(general_fields, 3, 2)
 
-    #         # click on QP Extreme quest
-    #         pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
-    #         pag.click()
+        # click on attack, then NP skill click, then face cards click (random for now)
+        # NOTE: for face card selecting frontend (when being made), maybe give users a list such that they can set the priority for turn order (obviously including NP), but if none selected, then just randomize the face card selection (but not NP)
 
-    # time.sleep(GENERAL_LONG_SLEEP)
+        open_attack_options(region)
+        np_card_click(region, 2)
+        choose_random_face_cards(region, 2)
 
-    # # switch to caster class
-    # loc = pag.locateCenterOnScreen(
-    #     "img/screenshots/friend_support_caster_class.png", confidence=0.8
-    # )
-    # pag.moveTo(loc.x // 2, loc.y // 2)
-    # pag.click()
+        time.sleep(1)
+        general_skill_speedup(region)
 
-    # # make sure at top of list
-    # pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.4)
-    # pag.click()
+        # Turn 2
+        wait_for_battle_menu(general_fields, 2)
 
-    # # find end of scrollbar if need to scroll
-    # loc = pag.locateOnScreen(
-    #     "img/screenshots/friend_support_scrollbar.png", confidence=0.8
-    # )
-    # curr_y = (loc.top + loc.height) // 2
-    # pag.moveTo((loc.left + (loc.width / 2)) // 2, curr_y)
+        open_attack_options(region)
+        np_card_click(region, 2)
+        choose_random_face_cards(region, 2)
 
-    # found = False
-    # while not found:
-    #     try:
-    #         # select castoria
-    #         loc_support = pag.locateCenterOnScreen(
-    #             "img/screenshots/friend_support_altria_caster.png", confidence=0.8
-    #         )
-    #         pag.moveTo(loc_support.x // 2, loc_support.y // 2)
-    #         pag.click()
-    #         found = True
-    #     except pag.ImageNotFoundException:
-    #         # scroll to next supports
-    #         curr_y += loc.height // 4
-    #         pag.dragTo(
-    #             (region[0] + region[2]) * 0.925, curr_y, button="left", duration=0.5
-    #         )
+        time.sleep(1)
+        general_skill_speedup(region)
 
-    # # switch to party VIII - QP farming party
-    # switch_party(region, 8)
+        # Turn 3
+        wait_for_battle_menu(general_fields, 3)
 
-    # # go back to support servant screen and go through process again - required to click start quest
-    # try:
-    #     loc_return = pag.locateCenterOnScreen(
-    #         "img/screenshots/party_screen_return_btn.png", confidence=0.8
-    #     )
-    #     pag.moveTo(loc_return.x // 2, loc_return.y // 2)
-    #     pag.click()
-    # except pag.ImageNotFoundException:
-    #     pag.moveTo((region[0] + region[2]) * 0.125, (region[1] + region[3]) * 0.25)
-    #     pag.click()
+        skill_click(general_fields, 2, 2)
+        skill_click(general_fields, 2, 3)
+        master_skill_click(general_fields, 1, 2)
 
-    # for run_turn in range(3):
+        open_attack_options(region)
 
-    #     wait_for_screen(
-    #         general_fields,
-    #         "img/screenshots/friend_support_scrollbar.png",
-    #         "img/screenshots/friend_support_scrollbar_found.png",
-    #         "Select Support",
-    #     )
+        np_order = [2, 1, 3]
+        for np in np_order:
+            np_card_click(region, np)
 
-    #     # find end of scrollbar if need to scroll
-    #     loc = pag.locateOnScreen(
-    #         "img/screenshots/friend_support_scrollbar.png", confidence=0.8
-    #     )
-    #     curr_y = (loc.top + loc.height) // 2
-    #     pag.moveTo((loc.left + (loc.width / 2)) // 2, curr_y)
+        time.sleep(1)
+        general_skill_speedup(region)
 
-    #     found = False
-    #     while not found:
-    #         try:
-    #             # select castoria
-    #             loc_support = pag.locateCenterOnScreen(
-    #                 "img/screenshots/friend_support_altria_caster.png", confidence=0.8
-    #             )
-    #             pag.moveTo(loc_support.x // 2, loc_support.y // 2)
-    #             pag.click()
-    #             found = True
-    #         except pag.ImageNotFoundException:
-    #             # scroll to next supports
-    #             curr_y += loc.height // 4
-    #             pag.dragTo(
-    #                 (region[0] + region[2]) * 0.925, curr_y, button="left", duration=0.5
-    #             )
+        # wait for servant bond screen
+        wait_for_screen(
+            general_fields,
+            "img/screenshots/servant_bond_after_battle.png",
+            "img/screenshots/servant_bond_screen_found.png",
+            "Servant Bond",
+        )
+        pag.moveTo((region[0] + region[2]) * 0.5, (region[1] + region[3]) * 0.5)
+        pag.click()
 
-    #     if run_turn == 0:
-    #         # start quest
-    #         try:
-    #             loc_start_quest = pag.locateCenterOnScreen(
-    #                 "img/screenshots/start_quest.png", confidence=0.8
-    #             )
-    #             pag.moveTo(loc_start_quest.x // 2, loc_start_quest.y // 2)
-    #             pag.click()
-    #         except pag.ImageNotFoundException:
-    #             action_text(
-    #                 general_fields,
-    #                 "img/screenshots/start_quest.png",
-    #                 "Start Quest",
-    #                 [0.88, 0.9],
-    #             )
+        # wait for master exp and mystic code exp screen
+        wait_for_screen(
+            general_fields,
+            "img/screenshots/double_triangle_master_mystic_exp.png",
+            "img/screenshots/master_mystic_exp_screen_found.png",
+            "Master EXP",
+        )
+        pag.moveTo((region[0] + region[2]) * 0.5, (region[1] + region[3]) * 0.5)
+        pag.click()
 
-    #     # Turn 1
-    #     # wait for battle screen to load
-    #     wait_for_screen(
-    #         general_fields,
-    #         "img/screenshots/battle_screen_menu_btn.png",
-    #         "img/screenshots/battle_screen_menu_btn_found.png",
-    #         "Battle Menu",
-    #     )
+        # next after items dropped received
+        wait_for_screen(
+            general_fields,
+            "img/screenshots/next_items_dropped_btn.png",
+            "img/screenshots/items_dropped_next_btn_found.png",
+            "QP Gained",
+        )
+        try:
+            loc_next_btn = pag.locateCenterOnScreen(
+                "img/screenshots/next_items_dropped_btn.png", confidence=0.8
+            )
+            pag.moveTo(loc_next_btn.x // 2, loc_next_btn.y // 2)
+            pag.click()
+        except pag.ImageNotFoundException:
+            action_text(
+                general_fields,
+                "img/screenshots/next_items_dropped_btn.png",
+                "Next",
+                [0.8, 0.9],
+            )
 
-    #     # NOTE: SKILL CLICKS FOR EXTREME QP W/ 2x CASTORIA + DA VINCI (RIDER) (Da Vinci (Rider) is in slot 2)
-    #     skill_click(general_fields, 1, 1)
-    #     skill_click(general_fields, 1, 2, 2)
-    #     skill_click(general_fields, 1, 3, 2)
-    #     skill_click(general_fields, 2, 1)
-    #     skill_click(general_fields, 3, 1)
-    #     skill_click(general_fields, 3, 2, 2)
-    #     skill_click(general_fields, 3, 3, 2)
-    #     master_skill_click(general_fields, 3, 2)
+        # NOTE: need to do text analysis to see how much AP and store - potentially in a variable and using apples?
 
-    #     # click on attack, then NP skill click, then face cards click (random for now)
-    #     # NOTE: for face card selecting frontend (when being made), maybe give users a list such that they can set the priority for turn order (obviously including NP), but if none selected, then just randomize the face card selection (but not NP)
-
-    #     # click on attack
-    #     pag.moveTo((region[0] + region[2]) * 0.845, (region[1] + region[3]) * 0.865)
-    #     pag.click()
-
-    #     np_card_click(region, 2)
-
-    #     old_random = 0
-    #     for i in range(2):
-    #         new_random = random.randint(1, 5)
-
-    #         while new_random == old_random:
-    #             new_random = random.randint(1, 5)
-
-    #         face_card_click(region, new_random)
-    #         old_random = new_random
-
-    #     # Turn 2
-    #     wait_for_screen(
-    #         general_fields,
-    #         "img/screenshots/battle_screen_menu_btn.png",
-    #         "img/screenshots/battle_screen_menu_btn_found.png",
-    #         "Battle Menu",
-    #     )
-
-    #     pag.moveTo((region[0] + region[2]) * 0.845, (region[1] + region[3]) * 0.865)
-    #     pag.click()
-
-    #     np_card_click(region, 2)
-
-    #     old_random = 0
-    #     for i in range(2):
-    #         new_random = random.randint(1, 5)
-
-    #         while new_random == old_random:
-    #             new_random = random.randint(1, 5)
-
-    #         face_card_click(region, new_random)
-    #         old_random = new_random
-
-    #     # for speedup
-    #     pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.55)
-    #     pag.click()
-
-    #     # Turn 3
-    #     wait_for_screen(
-    #         general_fields,
-    #         "img/screenshots/battle_screen_menu_btn.png",
-    #         "img/screenshots/battle_screen_menu_btn_found.png",
-    #         "Battle Menu",
-    #     )
-
-    #     skill_click(general_fields, 2, 2)
-    #     skill_click(general_fields, 2, 3)
-    #     master_skill_click(general_fields, 1, 2)
-
-    #     pag.moveTo((region[0] + region[2]) * 0.845, (region[1] + region[3]) * 0.865)
-    #     pag.click()
-
-    #     np_order = [2, 1, 3]
-    #     for np in np_order:
-    #         np_card_click(region, np)
-
-    #     # for speedup
-    #     pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.55)
-    #     pag.click()
-
-    #     # wait for servant bond screen
-    #     wait_for_screen(
-    #         general_fields,
-    #         "img/screenshots/servant_bond_after_battle.png",
-    #         "img/screenshots/servant_bond_screen_found.png",
-    #         "Servant Bond",
-    #     )
-    #     pag.moveTo((region[0] + region[2]) * 0.5, (region[1] + region[3]) * 0.5)
-    #     pag.click()
-
-    #     # wait for master exp and mystic code exp screen
-    #     wait_for_screen(
-    #         general_fields,
-    #         "img/screenshots/double_triangle_master_mystic_exp.png",
-    #         "img/screenshots/master_mystic_exp_screen_found.png",
-    #         "Master EXP",
-    #     )
-    #     pag.moveTo((region[0] + region[2]) * 0.5, (region[1] + region[3]) * 0.5)
-    #     pag.click()
-
-    #     # next after items dropped received
-    #     wait_for_screen(
-    #         general_fields,
-    #         "img/screenshots/next_items_dropped_btn.png",
-    #         "img/screenshots/items_dropped_next_btn_found.png",
-    #         "QP Gained",
-    #     )
-    #     try:
-    #         loc_next_btn = pag.locateCenterOnScreen(
-    #             "img/screenshots/next_items_dropped_btn.png", confidence=0.8
-    #         )
-    #         pag.moveTo(loc_next_btn.x // 2, loc_next_btn.y // 2)
-    #         pag.click()
-    #     except pag.ImageNotFoundException:
-    #         action_text(
-    #             general_fields,
-    #             "img/screenshots/next_items_dropped_btn.png",
-    #             "Next",
-    #             [0.8, 0.9],
-    #         )
-
-    #     # NOTE: need to do text analysis to see how much AP and store - potentially in a variable and using apples?
-
-    #     # repeat quest
-    #     wait_for_screen(
-    #         general_fields,
-    #         "img/screenshots/repeat_quest_btn.png",
-    #         "img/screenshots/repeat_quest_btn_found.png",
-    #         "AP Required",
-    #     )
-    #     # NOTE: this would need to be altered to close depending on how many runs - also add apples selection feature
-    #     try:
-    #         loc_repeat_quest = pag.locateCenterOnScreen(
-    #             "img/screenshots/repeat_quest_btn.png", confidence=0.8
-    #         )
-    #         pag.moveTo(loc_repeat_quest.x // 2, loc_repeat_quest.y // 2)
-    #         pag.click()
-    #     except pag.ImageNotFoundException:
-    #         action_text(
-    #             general_fields,
-    #             "img/screenshots/repeat_quest_btn.png",
-    #             "Repeat",
-    #             [0.625, 0.82],
-    #         )
+        # repeat quest
+        wait_for_screen(
+            general_fields,
+            "img/screenshots/repeat_quest_btn.png",
+            "img/screenshots/repeat_quest_btn_found.png",
+            "AP Required",
+        )
+        # NOTE: this would need to be altered to close depending on how many runs - also add apples selection feature
+        try:
+            loc_repeat_quest = pag.locateCenterOnScreen(
+                "img/screenshots/repeat_quest_btn.png", confidence=0.8
+            )
+            pag.moveTo(loc_repeat_quest.x // 2, loc_repeat_quest.y // 2)
+            pag.click()
+        except pag.ImageNotFoundException:
+            action_text(
+                general_fields,
+                "img/screenshots/repeat_quest_btn.png",
+                "Repeat",
+                [0.625, 0.82],
+            )
 
 
 if __name__ == "__main__":
