@@ -32,6 +32,9 @@ def log(msg, msg_type="success"):
         logger.error(e)
 
 
+SCRIPT_TIMEOUT = 10
+SCRIPT_RETRY_DELAY = 2
+SCRIPT_MAX_RETRIES = 3
 GENERAL_LONG_SLEEP = 10
 # pag.PAUSE = 1
 img_prefix = "img/screenshots/"
@@ -92,82 +95,67 @@ def find_text_location(image_path, search_text):
     return None
 
 
-# def mouse_event(event_type, x, y):
-#     event = CGEventCreateMouseEvent(None, event_type, (x, y), kCGMouseButtonLeft)
-#     CGEventPost(kCGHIDEventTap, event)
+def run_applescript(script, timeout=SCRIPT_TIMEOUT):
+    try:
+        subprocess.run(["osascript", "-e", script], timeout=timeout, check=True)
+        return True
+    except subprocess.TimeoutExpired:
+        log("AppleScript execution timed out.", "error")
+        return False
+    except subprocess.CalledProcessError as e:
+        log(f"AppleScript execution failed: {e}", "error")
+        return False
 
 
-# def force_click(x, y, hold_duration=0.5):
-#     """
-#     Simulates a 'force click' by holding down the left mouse button for a specific duration.
-
-#     Args:
-#         x (int): X-coordinate for the click.
-#         y (int): Y-coordinate for the click.
-#         hold_duration (float): Time in seconds to hold the click.
-#     """
-#     # Simulate left mouse button down
-#     mouse_event(kCGEventLeftMouseDown, x, y)
-
-#     # Hold the click for the specified duration
-#     time.sleep(hold_duration)
-
-#     # Simulate left mouse button up
-#     mouse_event(kCGEventLeftMouseUp, x, y)
-#     log(f"Force click performed at ({x}, {y}) with duration {hold_duration}s", "info")
-
-
-# def simulate_touch_drag(x, y, duration=0.5):
-#     mouse_event(kCGEventLeftMouseDown, x, y)
-#     time.sleep(duration)
-#     mouse_event(kCGEventLeftMouseDragged, x + 1, y + 1)  # Small drag
-#     mouse_event(kCGEventLeftMouseUp, x, y)
+def call_applescript(script, success_msg, error_msg, timeout=SCRIPT_TIMEOUT, retries=SCRIPT_MAX_RETRIES, delay=SCRIPT_RETRY_DELAY):
+    for retry in range(retries):
+        success = run_applescript(script, timeout)
+        if success:
+            log(success_msg, "success")
+            return
+        else:
+            log(f"attempt {retry + 1}: {error_msg}", "warning")
+            time.sleep(delay)
+    
+    if not success:
+        log("failed final attempt.", "error")
 
 
 # launch iphone mirroring app
 def launch_iphone_mirroring():
-    try:
-        script = 'tell application "iPhone Mirroring" to activate'
-        subprocess.run(["osascript", "-e", script], check=True)
-
-        log("iphone mirroring app launched.", "debug")
-
-    except subprocess.CalledProcessError as e:
-        log(f"failed to launch iphone mirroring app: {e}", "error")
+    script = 'tell application "iPhone Mirroring" to activate'
+    call_applescript(script, "iphone mirroring app launched.", "failed to launch iphone mirroring app.")
 
 
 # focus on the iphone mirroring window using applescript
 def focus_iphone_mirroring_window():
-    try:
-        # Combine both AppleScript commands into a single script
-        script = """
-        tell application "System Events"
-            tell process "iPhone Mirroring"
-                set frontmost to true
-                set visible to true
-            end tell
+    script = """
+    tell application "System Events"
+        tell process "iPhone Mirroring"
+            set frontmost to true
+            set visible to true
         end tell
-        """
-        # Run the combined script
-        subprocess.run(["osascript", "-e", script], check=True)
-        log("iphone mirroring window focused and visible.", "debug")
-
-    except subprocess.CalledProcessError as e:
-        log(f"error focusing iphone mirroring window: {e}", "error")
+    end tell
+    """
+    call_applescript(script, "iphone mirroring window focused and visible.", "failed to focus iphone mirroring window.")
 
 
 def move_iphone_mirroring_window():
-    try:
-        script = """
-        tell application "System Events"
-            set position of first window of application process "iPhone Mirroring" to {0, 0}
-        end tell
-        """
-        subprocess.run(["osascript", "-e", script], check=True)
-        log("iphone mirroring window moved to (0, 0)", "debug")
+    script = """
+    tell application "System Events"
+        set position of first window of application process "iPhone Mirroring" to {0, 0}
+    end tell
+    """
+    call_applescript(script, "iphone mirroring window moved to top-left corner.", "failed to move iphone mirroring window.")
 
-    except subprocess.CalledProcessError as e:
-        log(f"error moving iphone mirroring window: {e}", "error")
+
+def open_iphone_spotlight():
+    script = """
+    tell application "System Events"
+        keystroke "3" using {command down}
+    end tell
+    """
+    call_applescript(script, "opened spotlight search.", "Failed to open spotlight search.")
 
 
 # function to get the region of the iphone mirroring window
@@ -418,16 +406,21 @@ def wait_for_screen(general_fields, loc_img_path, ss_img_path, search_text):
         try:
             loc_battle_menu = pag.locateCenterOnScreen(loc_img_path, confidence=0.8)
             found = True
+            
+            log(f"found screen: {search_text}", "success")
+            return
         except pag.ImageNotFoundException:
             capture_screenshot(
                 region={"top": top, "left": left, "width": width, "height": height},
                 output_path=ss_img_path,
             )
             found = check_text_in_image(ss_img_path, search_text)
-        time.sleep(1)
+
+            log(f"found text: {search_text}", "success")
+            return
 
 
-def main():
+def launch_fgo():
     # launch and focus the iphone mirroring app
     launch_iphone_mirroring()
     focus_iphone_mirroring_window()
@@ -444,58 +437,123 @@ def main():
         "height": height,
     }
 
-    # # click on search button
-    # pag.moveTo((region[0] + region[2]) // 2, (region[1] + region[3]) * 0.85)
-    # pag.click()
+    # # get phone's home screen (while waiting for iphone mirroring app to load phone screen)
+    # capture_screenshot(
+    #     region={"top": top + (height * 0.8), "left": left + (width * 0.1), "width": (width * ((1 - 0.1) - 0.1)), "height": (height * 0.05)},
+    #     output_path="img/screenshots/ss.png",
+    # )
 
-    # # open fgo
-    # pag.write("fate/go", interval=0.05)
-    # pag.press("enter")
-    # log("fate/go entered into search bar.", "debug")
+    # wait for iphone's home screen to load
+    found_home_screen = False
+    while not found_home_screen:
+        try:
+            loc_battle_menu = pag.locateCenterOnScreen("img/screenshots/phone_home_screen.png", confidence=0.8)
+            found_home_screen = True
+            log(f"found home screen", "success")
+        except pag.ImageNotFoundException:
+            log("did not find home screen", "warning")
 
-    # region = get_iphone_mirroring_region()
-    # left, top, width, height = region
-    # general_fields = {
-    #     "region": region,
-    #     "left": left,
-    #     "top": top,
-    #     "width": width,
-    #     "height": height,
-    # }
+    # open fgo
+    open_iphone_spotlight()
+    wait_for_screen(
+        general_fields,
+        "img/screenshots/spotlight_search_icon.png",
+        "img/screenshots/spotlight_search_icon_found.png",
+        "Search",
+    )
+    pag.write("fate/go", interval=0.05)
+    pag.press("enter")
+    log("fate/go opened.", "success")
+    time.sleep(2)
 
-    # ### ALL OF THIS SHOULD BE WHILE WAITING FOR FIRST LOADING SCREEN AND THEN SECOND LOADING SCREEN
-    # # in case of data update
-    # # TODO: click on begin data update
+    region = get_iphone_mirroring_region()
+    left, top, width, height = region
+    general_fields = {
+        "region": region,
+        "left": left,
+        "top": top,
+        "width": width,
+        "height": height,
+    }
 
-    # # in case of video playback intro
-    # try:
-    #     loc_skip_video = pag.locateCenterOnScreen(
-    #         "img/screenshots/skip_video_playback_intro.png", confidence=0.8
-    #     )
-    #     pag.moveTo(loc_skip_video.x // 2, loc_skip_video.y // 2)
-    #     pag.click()
-    # except pag.ImageNotFoundException:
-    #     pass
-    # ###
+    return general_fields
 
-    # # click for first loading screen
-    # found = False
-    # while not found:
-    #     capture_screenshot(
-    #         region={"top": top, "left": left, "width": width, "height": height},
-    #         output_path="img/screenshots/first_tap_on_open.png",
-    #     )
-    #     found = check_text_in_image(
-    #         "img/screenshots/first_tap_on_open.png", "Please Tap the Screen"
-    #     )
-    #     time.sleep(1)
-    # pag.moveTo((region[0] + region[2]) // 2, (region[1] + region[3]) // 2)
-    # pag.click()
 
-    # # click for second loading screen
-    # time.sleep(GENERAL_LONG_SLEEP)
-    # pag.click()
-    # time.sleep(GENERAL_LONG_SLEEP)
+def get_to_fgo_home_screen(general_fields):
+    region, left, top, width, height = (
+        general_fields["region"],
+        general_fields["left"],
+        general_fields["top"],
+        general_fields["width"],
+        general_fields["height"],
+    )
+
+    # TODO: consider data update screen
+
+    # check for first loading screen
+    first_loading_screen_found = False
+    while not first_loading_screen_found:
+        capture_screenshot(
+            region={"top": top, "left": left, "width": width, "height": height},
+            output_path="img/screenshots/first_tap_on_open.png",
+        )
+        first_loading_screen_found = check_text_in_image(
+            "img/screenshots/first_tap_on_open.png", "Please Tap the Screen"
+        )
+
+        if not first_loading_screen_found:
+            # check for cache clear screen
+            try:
+                loc_not_clear_cache = pag.locateCenterOnScreen(
+                    "img/screenshots/clear_cache_prompt.png", confidence=0.8
+                )
+                log("found clear cache prompt", "info")
+
+                # don't clear cache
+                loc_not_clear_cache = pag.locateCenterOnScreen(
+                    "img/screenshots/no_clear_cache_btn.png", confidence=0.8
+                )
+                pag.moveTo(loc_not_clear_cache.x // 2, loc_not_clear_cache.y // 2)
+                pag.click()
+
+                log("clicked no for clearing cache", "info")
+            except pag.ImageNotFoundException:
+                pass
+
+            # check for video playback intro
+            try:
+                loc_skip_video = pag.locateCenterOnScreen(
+                    "img/screenshots/skip_video_playback_intro.png", confidence=0.8
+                )
+                log("found skip video playback intro", "info")
+
+                pag.moveTo(loc_skip_video.x // 2, loc_skip_video.y // 2)
+                pag.click()
+
+                log("clicked skip video playback intro", "info")
+            except pag.ImageNotFoundException:
+                pass
+
+    # click for first loading screen
+    pag.moveTo((region[0] + region[2]) // 2, (region[1] + region[3]) // 2)
+    pag.click()
+    log("clicked first loading screen", "info")
+
+    # wait for second loading screen
+    wait_for_screen(
+        general_fields,
+        "img/screenshots/criware_logo.png",
+        "img/screenshots/second_loading_screen_found.png",
+        "Data Transfer",
+    )
+    time.sleep(1)
+    pag.click()
+    log("clicked second loading screen", "info")
+
+
+def main():
+    general_fields = launch_fgo()
+    get_to_fgo_home_screen(general_fields)
 
     # # in case friend popup comes up
     # action_text(
@@ -729,7 +787,7 @@ def main():
     #     wait_for_screen(
     #         general_fields,
     #         "img/screenshots/friend_support_scrollbar.png",
-    #         "img/screenshots/freind_support_scrollbar_found.png",
+    #         "img/screenshots/friend_support_scrollbar_found.png",
     #         "Select Support",
     #     )
 
@@ -930,10 +988,22 @@ def main():
 if __name__ == "__main__":
     main()
 
+    # launch_iphone_mirroring()
+    # focus_iphone_mirroring_window()
+    # move_iphone_mirroring_window()
+    # focus_iphone_mirroring_window()
 
-### GOOD CODES TO HAVE:
+    # region = get_iphone_mirroring_region()
+    # left, top, width, height = region
+    # general_fields = {
+    #     "region": region,
+    #     "left": left,
+    #     "top": top,
+    #     "width": width,
+    #     "height": height,
+    # }
 
-# capture_screenshot(
-#     region={"top": top, "left": left, "width": width, "height": height},
-#     output_path="img/screenshots/ss.png",
-# )
+    # capture_screenshot(
+    #     region={"top": top, "left": left, "width": width, "height": height},
+    #     output_path="img/screenshots/ss.png",
+    # )
