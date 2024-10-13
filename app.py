@@ -347,7 +347,6 @@ def action_text(
         general_fields["height"],
     )
 
-    # in case friend popup comes up
     capture_screenshot(
         region={"top": top, "left": left, "width": width, "height": height},
         output_path=img_path,
@@ -551,89 +550,132 @@ def get_to_fgo_home_screen(general_fields):
     log("clicked second loading screen", "info")
 
 
+def friend_popup_handler(general_fields):
+    action_text(
+        general_fields,
+        "img/screenshots/potential_friend_popup.png",
+        "Close",
+        [0.3, 0.85],
+        ["Friend Points", "Most used Servant"],
+    )
+
+
+def news_popup_handler(general_fields):
+    region, left, top, width, height = (
+        general_fields["region"],
+        general_fields["left"],
+        general_fields["top"],
+        general_fields["width"],
+        general_fields["height"],
+    )
+
+    capture_screenshot(
+        region={"top": top, "left": left, "width": width, "height": height},
+        output_path="img/screenshots/potential_news.png",
+    )
+    search_words = ["Maintenance", "Issues", "Facebook", "X (Twitter)"]
+    search_words_results = [
+        check_text_in_image("img/screenshots/potential_news.png", search_word)
+        for search_word in search_words
+    ]
+    if True in search_words_results:
+        pag.moveTo((region[0] + region[2]) * 0.885, (region[1] + region[3]) * 0.24)
+        pag.click()
+
+
+def other_popups_handler(general_fields):
+    region, left, top, width, height = (
+        general_fields["region"],
+        general_fields["left"],
+        general_fields["top"],
+        general_fields["width"],
+        general_fields["height"],
+    )
+
+    capture_screenshot(
+        region={"top": top, "left": left, "width": width, "height": height},
+        output_path="img/screenshots/potential_close_btns.png",
+    )
+
+    try:
+        loc_close = pag.locateCenterOnScreen(
+            "img/screenshots/close_btn.png", confidence=0.8
+        )
+        loc_close_exists = True
+    except pag.ImageNotFoundException:
+        loc_close_exists = False
+
+    while loc_close_exists or check_text_in_image(
+        "img/screenshots/potential_close_btns.png", "Close"
+    ):
+        if loc_close_exists:
+            pag.moveTo(loc_close.x, loc_close.y)
+            pag.click()
+        else:
+            bbox = find_text_location(
+                "img/screenshots/potential_close_btns.png", "Close"
+            )
+            if bbox:
+                x, y, width, height = bbox
+                log(
+                    f"Bounding box for 'Close': x={x}, y={y}, width={width}, height={height}"
+                )
+                pag.moveTo(region[0] + x, region[1] + y)
+            else:
+                pag.moveTo(
+                    (region[0] + region[2]) * 0.5, (region[1] + region[3]) * 0.835
+                )
+            pag.click()
+
+        try:
+            loc_close = pag.locateCenterOnScreen(
+                "img/screenshots/close_btn.png", confidence=0.8
+            )
+            loc_close_exists = True
+        except pag.ImageNotFoundException:
+            loc_close_exists = False
+
+
+def handle_all_popups(general_fields):
+    fgo_home_screen_found = False
+    while not fgo_home_screen_found:
+        try:
+            loc_fgo_home_screen = pag.locateCenterOnScreen(
+                "img/screenshots/news_btn.png", confidence=0.8
+            )  # NOTE: might need to change this to be chaldea gate instead of back news btn
+            fgo_home_screen_found = True
+            log("found fgo home screen", "success")
+
+        except pag.ImageNotFoundException:
+            # in case friend popup comes up
+            friend_popup_handler(general_fields)
+
+            # in case news shows up
+            news_popup_handler(general_fields)
+
+            # in case of any close buttons
+            other_popups_handler(general_fields)
+
+
 def main():
     general_fields = launch_fgo()
     get_to_fgo_home_screen(general_fields)
+    handle_all_popups(general_fields)
 
-    # # in case friend popup comes up
-    # action_text(
-    #     general_fields,
-    #     "img/screenshots/potential_friend_popup.png",
-    #     "Close",
-    #     [0.3, 0.85],
-    #     ["Friend Points", "Most used Servant"],
-    # )
+    region, left, top, width, height = (
+        general_fields["region"],
+        general_fields["left"],
+        general_fields["top"],
+        general_fields["width"],
+        general_fields["height"],
+    )
 
-    # # in case news shows up
-    # capture_screenshot(
-    #     region={"top": top, "left": left, "width": width, "height": height},
-    #     output_path="img/screenshots/potential_news.png",
-    # )
-    # search_words = ["News", "Maintenance", "Issues", "Facebook", "X (Twitter)"]
-    # search_words_results = [
-    #     check_text_in_image("img/screenshots/potential_news.png", search_word)
-    #     for search_word in search_words
-    # ]
-    # if True in search_words_results:
-    #     pag.moveTo((region[0] + region[2]) * 0.885, (region[1] + region[3]) * 0.24)
-    #     pag.click()
-    #     time.sleep(GENERAL_LONG_SLEEP)
-
-    # # in case of any close buttons
-    # capture_screenshot(
-    #     region={"top": top, "left": left, "width": width, "height": height},
-    #     output_path="img/screenshots/potential_close_btns.png",
-    # )
-    # loc_close_happened = False
-
-    # try:
-    #     loc_close = pag.locateCenterOnScreen(
-    #         "img/screenshots/close_btn.png", confidence=0.8
-    #     )
-    #     loc_close_exists = True
-    # except pag.ImageNotFoundException:
-    #     loc_close_exists = False
-
-    # while loc_close_exists or check_text_in_image(
-    #     "img/screenshots/potential_close_btns.png", "Close"
-    # ):
-    #     loc_close_happened = True
-    #     if loc_close_exists:
-    #         pag.moveTo(loc_close.x, loc_close.y)
-    #         pag.click()
-    #     else:
-    #         bbox = find_text_location(
-    #             "img/screenshots/potential_close_btns.png", "Close"
-    #         )
-    #         if bbox:
-    #             x, y, width, height = bbox
-    #             log(
-    #                 f"Bounding box for 'Close': x={x}, y={y}, width={width}, height={height}"
-    #             )
-    #             pag.moveTo(region[0] + x, region[1] + y)
-    #         else:
-    #             pag.moveTo(
-    #                 (region[0] + region[2]) * 0.5, (region[1] + region[3]) * 0.835
-    #             )
-    #         pag.click()
-
-    #     try:
-    #         loc_close = pag.locateCenterOnScreen(
-    #             "img/screenshots/close_btn.png", confidence=0.8
-    #         )
-    #         loc_close_exists = True
-    #     except pag.ImageNotFoundException:
-    #         loc_close_exists = False
-
-    # if loc_close_happened:
-    #     time.sleep(GENERAL_LONG_SLEEP)
-
-    # # drag scroll bar to top of screen
-    # pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.35)
-    # pag.click()
-    # pag.dragTo(
-    #     (region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.3, button="left"
-    # )
+    # drag scroll bar to top of screen
+    pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.35)
+    pag.click()
+    pag.dragTo(
+        (region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.3, button="left"
+    )
 
     # # open Chaldea Gate menu
     # try:
