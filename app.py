@@ -910,26 +910,26 @@ def choose_random_face_cards(region, number_of_cards=2):
 
 
 def main():
-    # general_fields = launch_fgo()
-    # get_to_fgo_home_screen(general_fields)
-    # handle_all_popups(general_fields)
+    general_fields = launch_fgo()
+    get_to_fgo_home_screen(general_fields)
+    handle_all_popups(general_fields)
 
-    ### START TESTING
-    launch_iphone_mirroring()
-    focus_iphone_mirroring_window()
-    move_iphone_mirroring_window()
-    focus_iphone_mirroring_window()
+    # ### START TESTING
+    # launch_iphone_mirroring()
+    # focus_iphone_mirroring_window()
+    # move_iphone_mirroring_window()
+    # focus_iphone_mirroring_window()
 
-    region = get_iphone_mirroring_region()
-    left, top, width, height = region
-    general_fields = {
-        "region": region,
-        "left": left,
-        "top": top,
-        "width": width,
-        "height": height,
-    }
-    ### END TESTING
+    # region = get_iphone_mirroring_region()
+    # left, top, width, height = region
+    # general_fields = {
+    #     "region": region,
+    #     "left": left,
+    #     "top": top,
+    #     "width": width,
+    #     "height": height,
+    # }
+    # ### END TESTING
 
     region, left, top, width, height = (
         general_fields["region"],
@@ -939,9 +939,9 @@ def main():
         general_fields["height"],
     )
 
-    # open_chaldea_gate_menu(general_fields)
-    # open_daily_quests_menu(general_fields)
-    # open_extreme_qp_quest(general_fields)
+    open_chaldea_gate_menu(general_fields)
+    open_daily_quests_menu(general_fields)
+    open_extreme_qp_quest(general_fields)
 
     wait_for_screen(
         general_fields,
