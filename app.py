@@ -39,6 +39,7 @@ GENERAL_LONG_SLEEP = 10
 # pag.PAUSE = 1
 img_prefix = "img/screenshots/"
 
+
 def capture_screenshot(region=None, output_path="screenshot.png"):
     with mss.mss() as sct:
         if region:  # capture a specific region or the whole screen
@@ -114,7 +115,14 @@ def run_applescript(script, timeout=SCRIPT_TIMEOUT):
         return False
 
 
-def call_applescript(script, success_msg, error_msg, timeout=SCRIPT_TIMEOUT, retries=SCRIPT_MAX_RETRIES, delay=SCRIPT_RETRY_DELAY):
+def call_applescript(
+    script,
+    success_msg,
+    error_msg,
+    timeout=SCRIPT_TIMEOUT,
+    retries=SCRIPT_MAX_RETRIES,
+    delay=SCRIPT_RETRY_DELAY,
+):
     for retry in range(retries):
         success = run_applescript(script, timeout)
         if success:
@@ -123,7 +131,7 @@ def call_applescript(script, success_msg, error_msg, timeout=SCRIPT_TIMEOUT, ret
         else:
             log(f"attempt {retry + 1}: {error_msg}", "warning")
             time.sleep(delay)
-    
+
     if not success:
         log("failed final attempt.", "error")
 
@@ -131,7 +139,11 @@ def call_applescript(script, success_msg, error_msg, timeout=SCRIPT_TIMEOUT, ret
 # launch iphone mirroring app
 def launch_iphone_mirroring():
     script = 'tell application "iPhone Mirroring" to activate'
-    call_applescript(script, "iphone mirroring app launched.", "failed to launch iphone mirroring app.")
+    call_applescript(
+        script,
+        "iphone mirroring app launched.",
+        "failed to launch iphone mirroring app.",
+    )
 
 
 # focus on the iphone mirroring window using applescript
@@ -144,7 +156,11 @@ def focus_iphone_mirroring_window():
         end tell
     end tell
     """
-    call_applescript(script, "iphone mirroring window focused and visible.", "failed to focus iphone mirroring window.")
+    call_applescript(
+        script,
+        "iphone mirroring window focused and visible.",
+        "failed to focus iphone mirroring window.",
+    )
 
 
 def move_iphone_mirroring_window():
@@ -153,7 +169,11 @@ def move_iphone_mirroring_window():
         set position of first window of application process "iPhone Mirroring" to {0, 0}
     end tell
     """
-    call_applescript(script, "iphone mirroring window moved to top-left corner.", "failed to move iphone mirroring window.")
+    call_applescript(
+        script,
+        "iphone mirroring window moved to top-left corner.",
+        "failed to move iphone mirroring window.",
+    )
 
 
 def open_iphone_spotlight():
@@ -162,7 +182,9 @@ def open_iphone_spotlight():
         keystroke "3" using {command down}
     end tell
     """
-    call_applescript(script, "opened spotlight search.", "Failed to open spotlight search.")
+    call_applescript(
+        script, "opened spotlight search.", "Failed to open spotlight search."
+    )
 
 
 # function to get the region of the iphone mirroring window
@@ -403,7 +425,7 @@ def wait_for_screen(general_fields, loc_img_path, ss_img_path, search_text):
                 region={"top": top, "left": left, "width": width, "height": height},
                 output_path=ss_img_path,
             )
-            found = check_text_in_image(ss_img_path, search_text)            
+            found = check_text_in_image(ss_img_path, search_text)
             delete_file(ss_img_path)
 
             if found:
@@ -440,7 +462,9 @@ def launch_fgo():
     found_home_screen = False
     while not found_home_screen:
         try:
-            loc_battle_menu = pag.locateCenterOnScreen("img/screenshots/phone_home_screen.png", confidence=0.8)
+            loc_battle_menu = pag.locateCenterOnScreen(
+                "img/screenshots/phone_home_screen.png", confidence=0.8
+            )
             found_home_screen = True
             log(f"found home screen", "success")
         except pag.ImageNotFoundException:
@@ -705,7 +729,7 @@ def open_chaldea_gate_menu(general_fields):
             pag.moveTo(
                 (region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.61
             )  # NOTE: won't work if event - change 0.61 to something higher
-        
+
         delete_file("img/screenshots/fgo_in_game_homescreen.png")
         pag.click()
         time.sleep(1)
@@ -742,7 +766,7 @@ def open_daily_quests_menu(general_fields):
         pag.moveTo(region[0] + x, region[1] + y)
     else:
         pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
-    
+
     delete_file("img/screenshots/chaldea_gate_menu.png")
     pag.click()
     time.sleep(1)
@@ -773,7 +797,10 @@ def open_extreme_qp_quest(general_fields):
     found = False
     while not found:
         try:
-            loc_extreme_qp_quest = pag.locateCenterOnScreen("img/screenshots/enter_the_treasure_vault_extreme_banner.png", confidence=0.8)
+            loc_extreme_qp_quest = pag.locateCenterOnScreen(
+                "img/screenshots/enter_the_treasure_vault_extreme_banner.png",
+                confidence=0.8,
+            )
             pag.moveTo(loc_extreme_qp_quest.x // 2, loc_extreme_qp_quest.y // 2)
             pag.click()
             found = True
@@ -786,7 +813,9 @@ def open_extreme_qp_quest(general_fields):
                 region={"top": top, "left": left, "width": width, "height": height},
                 output_path="img/screenshots/daily_quests_menu.png",
             )
-            found = check_text_in_image("img/screenshots/daily_quests_menu.png", "Vault - Extreme")
+            found = check_text_in_image(
+                "img/screenshots/daily_quests_menu.png", "Vault - Extreme"
+            )
             delete_file("img/screenshots/daily_quests_menu.png")
 
             if found:
@@ -796,11 +825,16 @@ def open_extreme_qp_quest(general_fields):
                 if curr_y < (region[1] + region[3]) * 0.875:
                     curr_y += loc.height // 4
                     pag.dragTo(
-                       (region[0] + region[2]) * 0.925, curr_y, button="left", duration=0.5
+                        (region[0] + region[2]) * 0.925,
+                        curr_y,
+                        button="left",
+                        duration=0.5,
                     )
 
                 else:
-                    pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
+                    pag.moveTo(
+                        (region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4
+                    )
                     pag.click()
                     time.sleep(1)
                     return
@@ -826,7 +860,7 @@ def open_extreme_qp_quest(general_fields):
         # click on QP Extreme quest
         pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
         pag.click()
-    
+
     delete_file("img/screenshots/daily_quests_menu.png")
     time.sleep(1)
 
@@ -867,9 +901,7 @@ def select_support_servant(region, support_img_path):
     while not found:
         try:
             # select castoria
-            loc_support = pag.locateCenterOnScreen(
-                support_img_path, confidence=0.8
-            )
+            loc_support = pag.locateCenterOnScreen(support_img_path, confidence=0.8)
             pag.moveTo(loc_support.x // 2, loc_support.y // 2)
             pag.click()
             found = True
@@ -997,15 +1029,13 @@ def main():
         general_fields,
         "img/screenshots/select_support_menu.png",
         "img/screenshots/select_support_menu_found.png",
-        "Select Support"
+        "Select Support",
     )
 
     # switch to caster class
     choose_support_class("caster")
     drag_scrollbar_to_top_support_selection(region)
-    select_support_servant(
-        region, "img/screenshots/friend_support_altria_caster.png"
-    )
+    select_support_servant(region, "img/screenshots/friend_support_altria_caster.png")
     time.sleep(1)
 
     # switch to party VIII - QP farming party
@@ -1029,7 +1059,7 @@ def main():
 
         # Turn 1 (for battle)
         wait_for_battle_menu(general_fields, 1)
-        
+
         time.sleep(1)
         general_skill_speedup(region)
 
