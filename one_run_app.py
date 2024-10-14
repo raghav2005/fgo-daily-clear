@@ -705,8 +705,10 @@ def open_chaldea_gate_menu(general_fields):
             pag.moveTo(
                 (region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.61
             )  # NOTE: won't work if event - change 0.61 to something higher
+        
         delete_file("img/screenshots/fgo_in_game_homescreen.png")
         pag.click()
+        time.sleep(1)
 
 
 def open_daily_quests_menu(general_fields):
@@ -740,8 +742,10 @@ def open_daily_quests_menu(general_fields):
         pag.moveTo(region[0] + x, region[1] + y)
     else:
         pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
+    
     delete_file("img/screenshots/chaldea_gate_menu.png")
     pag.click()
+    time.sleep(1)
 
 
 def open_extreme_qp_quest(general_fields):
@@ -753,15 +757,55 @@ def open_extreme_qp_quest(general_fields):
         general_fields["height"],
     )
 
+    try:
+        loc = pag.locateOnScreen(
+            "img/screenshots/daily_quests_scrollbar.png", confidence=0.8
+        )
+        curr_y = (loc.top + loc.height) // 2
+        pag.moveTo((loc.left + (loc.width / 2)) // 2, curr_y)
+    except pag.ImageNotFoundException:
+        curr_y = (region[1] + region[3]) // 2
+
     # move scrollbar to bottom of screen for extreme QP quest
-    pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.84)
-    pag.click()
-    wait_for_screen(
-        general_fields,
-        "img/screenshots/enter_the_treasure_vault_extreme_banner.png",
-        "img/screenshots/daily_quests_menu.png",
-        "Enter the Treasure Vault - Extreme",
-    )
+    # pag.moveTo((region[0] + region[2]) * 0.925, (region[1] + region[3]) * 0.8375)
+    # pag.click()
+
+    found = False
+    while not found:
+        try:
+            loc_extreme_qp_quest = pag.locateCenterOnScreen("img/screenshots/enter_the_treasure_vault_extreme_banner.png", confidence=0.8)
+            pag.moveTo(loc_extreme_qp_quest.x // 2, loc_extreme_qp_quest.y // 2)
+            pag.click()
+            found = True
+
+            log(f"found screen: extreme QP quest", "success")
+            time.sleep(1)
+            return
+        except pag.ImageNotFoundException:
+            capture_screenshot(
+                region={"top": top, "left": left, "width": width, "height": height},
+                output_path="img/screenshots/daily_quests_menu.png",
+            )
+            found = check_text_in_image("img/screenshots/daily_quests_menu.png", "Vault - Extreme")
+            delete_file("img/screenshots/daily_quests_menu.png")
+
+            if found:
+                log(f"found text: {search_text}", "success")
+                time.sleep(1)
+            else:
+                if curr_y < (region[1] + region[3]) * 0.875:
+                    curr_y += loc.height // 4
+                    pag.dragTo(
+                       (region[0] + region[2]) * 0.925, curr_y, button="left", duration=0.5
+                    )
+
+                else:
+                    pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
+                    pag.click()
+                    time.sleep(1)
+                    return
+
+        time.sleep(0.25)
 
     # open Extreme QP quest
     capture_screenshot(
@@ -782,7 +826,9 @@ def open_extreme_qp_quest(general_fields):
         # click on QP Extreme quest
         pag.moveTo((region[0] + region[2]) * 0.7, (region[1] + region[3]) * 0.4)
         pag.click()
+    
     delete_file("img/screenshots/daily_quests_menu.png")
+    time.sleep(1)
 
 
 def choose_support_class(class_name="caster"):
@@ -808,11 +854,14 @@ def drag_scrollbar_to_top_support_selection(region):
 
 def select_support_servant(region, support_img_path):
     # find end of scrollbar if need to scroll
-    loc = pag.locateOnScreen(
-        "img/screenshots/friend_support_scrollbar.png", confidence=0.8
-    )
-    curr_y = (loc.top + loc.height) // 2
-    pag.moveTo((loc.left + (loc.width / 2)) // 2, curr_y)
+    try:
+        loc = pag.locateOnScreen(
+            "img/screenshots/friend_support_scrollbar.png", confidence=0.8
+        )
+        curr_y = (loc.top + loc.height) // 2
+        pag.moveTo((loc.left + (loc.width / 2)) // 2, curr_y)
+    except pag.ImageNotFoundException:
+        pass
 
     found = False
     while not found:
@@ -852,10 +901,11 @@ def start_quest(general_fields):
         )
         pag.moveTo(loc_start_quest.x // 2, loc_start_quest.y // 2)
         pag.click()
+        pag.click()
     except pag.ImageNotFoundException:
         action_text(
             general_fields,
-            "img/screenshots/start_quest.png",
+            "img/screenshots/start_quest_screen.png",
             "Start Quest",
             [0.88, 0.9],
         )
@@ -939,9 +989,9 @@ def main():
         general_fields["height"],
     )
 
-    # open_chaldea_gate_menu(general_fields)
-    # open_daily_quests_menu(general_fields)
-    # open_extreme_qp_quest(general_fields)
+    open_chaldea_gate_menu(general_fields)
+    open_daily_quests_menu(general_fields)
+    open_extreme_qp_quest(general_fields)
 
     wait_for_screen(
         general_fields,
@@ -956,6 +1006,7 @@ def main():
     select_support_servant(
         region, "img/screenshots/friend_support_altria_caster.png"
     )
+    start_quest(general_fields)
 
     # switch to party VIII - QP farming party
     switch_party(region, 8)
