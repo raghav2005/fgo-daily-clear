@@ -8,16 +8,22 @@ This repo contains code that allows a user to clear a specific daily quest for t
 
 - "Begin Data Update" in case of an update button
 
-- Find a way to know when next loading screens are, rather than just doing time.sleep
-
-- CHANGE ALL HARDCODED SLEEPS TO DYNAMIC WAITS UNTIL SOMETHING ON THE SCREEN APPEARS
-
 - Speed up skill animations by clicking somewhere after skill use - around where the actual team is shown (I'm guessing (x0.7, x0.6) or something)
 
-## POTENTIAL OTHER TECHNOLOGIES (TRY ALL 3)
+- Scroll for finding Chaldea Gate + Daily Quests (+ any other things)
 
-- SikuliX
+- Change time delays depending on exact button / step (maybe add global delay too for users to alter)
 
-- Appium
+- Choose apples if no more (repeat button dimmed (not sure about this) or smth else)
 
-- AppleScript
+- Any other closed buttons on home screen - e.g. master missions updated
+
+- Consider letting user already opening quest and then just automating support servant selection onwards
+
+- Use Atlas API for skills + choosing servants, etc. (e.g. is it a targetable skill?)
+
+- Change img directory to actually be structured a little bit at least (prefix variable for img/)
+
+- Convert to OOP
+
+- Find out if web app or native mac app makes more sense + how to execute python script from that (need to be compiled? + what about privileges, etc.)
